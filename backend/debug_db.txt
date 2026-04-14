@@ -1,0 +1,24 @@
+ERROR EXECUTE ORACLE (2026-04-09 10:19:08.101406): ORA-01745: invalid host/bind variable name
+Help: https://docs.oracle.com/error-help/db/ora-01745/
+ERROR EXECUTE ORACLE (2026-04-09 10:20:47.092768): ORA-01745: invalid host/bind variable name
+Help: https://docs.oracle.com/error-help/db/ora-01745/
+ERROR EXECUTE ORACLE (2026-04-09 10:21:52.372978): ORA-01745: invalid host/bind variable name
+Help: https://docs.oracle.com/error-help/db/ora-01745/
+ERROR EXECUTE ORACLE (2026-04-09 10:25:59.538360): ORA-01745: invalid host/bind variable name
+Help: https://docs.oracle.com/error-help/db/ora-01745/
+ERROR EXECUTE ORACLE (2026-04-09 10:26:11.229865): ORA-01745: invalid host/bind variable name
+Help: https://docs.oracle.com/error-help/db/ora-01745/
+ERROR EXECUTE ORACLE (2026-04-09 10:27:33.974249): ORA-01745: invalid host/bind variable name
+Help: https://docs.oracle.com/error-help/db/ora-01745/
+ERROR EXECUTE ORACLE (2026-04-09 10:27:47.185866): ORA-01745: invalid host/bind variable name
+Help: https://docs.oracle.com/error-help/db/ora-01745/
+ERROR EXECUTE ORACLE (2026-04-09 10:28:10.212617): ORA-01745: invalid host/bind variable name
+Help: https://docs.oracle.com/error-help/db/ora-01745/
+ERROR EXECUTE ORACLE (2026-04-09 10:29:54.933769): ORA-01745: invalid host/bind variable name
+Help: https://docs.oracle.com/error-help/db/ora-01745/
+ERROR EXECUTE ORACLE (2026-04-09 10:30:01.863508): ORA-01745: invalid host/bind variable name
+Help: https://docs.oracle.com/error-help/db/ora-01745/
+ERROR EXECUTE ORACLE (2026-04-09 10:31:33.685105): ORA-01745: invalid host/bind variable name
+Help: https://docs.oracle.com/error-help/db/ora-01745/
+ERROR EXECUTE ORACLE (2026-04-09 10:33:14.554379): ORA-01745: invalid host/bind variable name
+Help: https://docs.oracle.com/error-help/db/ora-01745/

@@ -1,0 +1,186 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}BDEF APP{% endblock %}</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="{% static 'img/logo-SinFondo.png' %}">
+    <!-- Charts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- jQuery & DataTables -->
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.dataTables.min.css">
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.print.min.js"></script>
+    <!-- Base CSS -->
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    {% block extra_head %}{% endblock %}
+</head>
+<body style="background: var(--bg-dark) !important; color: var(--text-main) !important; min-height: 100vh; display: flex; flex-direction: column;">
+
+    <main class="main-layout" style="display: flex; flex-direction: column; flex: 1; padding: 0 !important; margin: 0 !important; width: 100% !important;">
+        <section class="content-container animate-fade" style="flex: 1; padding: 1.5rem; display: flex; flex-direction: column;">
+            {% block content %}{% endblock %}
+        </section>
+
+        <!-- Footer Institucional Simplificado -->
+        <footer style="background: var(--bg-card); border-top: 1px solid var(--glass-border); padding: 0.8rem 1.5rem; display: flex; align-items: center; justify-content: space-between; z-index: 100;">
+            <div style="display: flex; align-items: center; gap: 1rem;">
+                <span style="font-size: 0.7rem; color: var(--text-muted); font-weight: 500;">
+                    &copy; 2026 BDEF_APP Integrado | <strong>Edwin Rueda</strong>
+                </span>
+            </div>
+            <div style="font-size: 0.7rem; color: var(--text-muted); font-style: italic;">
+                v3.0.0 Integrated
+            </div>
+        </footer>
+    </main>
+
+    <!-- Global Loader Overlay -->
+    <div id="globalLoader" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.8); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); z-index: 99999; flex-direction: column; align-items: center; justify-content: center; color: white; font-family: 'Inter', sans-serif;">
+        <div class="loader-content" style="text-align: center; animation: fadeInScale 0.4s cubic-bezier(0.16, 1, 0.3, 1);">
+            <div class="premium-spinner">
+                <div class="inner-spin"></div>
+                <img src="/assets/logo-SinFondo.png" alt="Logo Loader" class="loader-logo">
+            </div>
+            <h3 style="font-weight: 800; margin-bottom: 0.5rem; letter-spacing: -1px; font-size: 1.5rem;">PROCESANDO DATOS</h3>
+            <p style="color: rgba(255,255,255,0.6); font-size: 0.9rem; font-weight: 500; max-width: 300px; line-height: 1.5;">Estamos preparando su reporte analítico. Por favor, no cierre esta ventana.</p>
+        </div>
+    </div>
+
+    <style>
+        .premium-spinner {
+            width: 100px;
+            height: 100px;
+            border: 4px solid rgba(255, 255, 255, 0.05);
+            border-top: 4px solid #3b82f6;
+            border-radius: 50%;
+            margin: 0 auto 2rem;
+            position: relative;
+            animation: spin 1.2s cubic-bezier(0.5, 0.1, 0.4, 0.9) infinite;
+            box-shadow: 0 0 30px rgba(59, 130, 246, 0.2);
+        }
+        .loader-logo {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            height: 40px;
+            width: auto;
+            animation: pulse-logo 2s ease-in-out infinite;
+        }
+        @keyframes pulse-logo {
+            0%, 100% { transform: translate(-50%, -50%) scale(0.95); opacity: 0.7; }
+            50% { transform: translate(-50%, -50%) scale(1.05); opacity: 1; }
+        }
+        .inner-spin {
+            position: absolute;
+            top: 10px; left: 10px; right: 10px; bottom: 10px;
+            border: 3px solid transparent;
+            border-top: 3px solid #60a5fa;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite reverse;
+            opacity: 0.6;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes fadeInScale { from { opacity: 0; transform: scale(0.95); } to { opacity: 1; transform: scale(1); } }
+        
+        .light-mode #globalLoader {
+            background: rgba(255, 255, 255, 0.85);
+            color: #0f172a;
+        }
+    </style>
+
+    <script>
+        const themeToggle = document.getElementById('themeToggle');
+        const themeIcon = document.getElementById('themeIcon');
+        const body = document.body;
+
+        // Mostrar Loader en formularios
+        document.addEventListener('submit', function(e) {
+            if (e.defaultPrevented) return; // Si una validación detuvo el envío, no mostrar loader
+            
+            if (!e.target.classList.contains('no-loader')) {
+                const loader = document.getElementById('globalLoader');
+                if (loader) loader.style.display = 'flex';
+                
+                const downloadForms = ['historyDownloadForm', 'bulkDownloadForm', 'territorialForm', 'deudaDownloadForm', 'recaudoDownloadForm'];
+                if (downloadForms.includes(e.target.id)) {
+                    // Poll para detectar la cookie de descarga completada
+                    const pollInterval = setInterval(() => {
+                        if (document.cookie.indexOf('downloadComplete=1') !== -1) {
+                            loader.style.display = 'none';
+                            // Eliminar la cookie
+                            document.cookie = 'downloadComplete=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+                            clearInterval(pollInterval);
+                        }
+                    }, 500);
+                    // Timeout de seguridad (60s)
+                    setTimeout(() => { clearInterval(pollInterval); loader.style.display = 'none'; }, 60000);
+                }
+            }
+        });
+
+        // Mostrar Loader al navegar por los menús
+        document.querySelectorAll('.nav-item').forEach(link => {
+            link.addEventListener('click', function(e) {
+                // Solo si no es el mismo link activo (para no recargar innecesariamente)
+                if (!this.classList.contains('active')) {
+                    document.getElementById('globalLoader').style.display = 'flex';
+                }
+            });
+        });
+
+        // Función para cambiar el tema
+        function toggleTheme(forceSource = null) {
+            const isLight = forceSource === 'light' || (!forceSource && !body.classList.contains('light-mode'));
+            
+            body.classList.toggle('light-mode', isLight);
+            
+            // Cambiar icono y texto
+            const themeText = document.getElementById('themeText');
+            if (themeIcon) {
+                themeIcon.className = isLight ? 'fas fa-sun' : 'fas fa-moon';
+            }
+            if (themeText) {
+                themeText.innerText = isLight ? 'Modo Claro' : 'Modo Oscuro';
+            }
+            
+            // Guardar preferencia (usar la misma que el portal para consistencia)
+            localStorage.setItem('portal-theme', isLight ? 'light' : 'dark');
+        }
+
+        // Cargar preferencia al iniciar (Sincronizado con Portal)
+        const savedTheme = localStorage.getItem('portal-theme') || 'dark'; // BDEF es oscuro por defecto
+        if (savedTheme === 'light') {
+            body.classList.add('light-mode');
+            if (themeIcon) themeIcon.className = 'fas fa-sun';
+            const themeText = document.getElementById('themeText');
+            if (themeText) themeText.innerText = 'Modo Claro';
+        }
+
+        if (themeToggle) themeToggle.addEventListener('click', () => toggleTheme());
+
+        // Escuchar cambios desde el Portal (Padre)
+        window.addEventListener('message', function(event) {
+            if (event.data && event.data.type === 'THEME_CHANGE') {
+                toggleTheme(event.data.theme);
+            }
+        });
+    </script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

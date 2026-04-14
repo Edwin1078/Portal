@@ -1,0 +1,326 @@
+{% extends 'base.html' %}
+
+{% block title %}Consulta por Transformador - BDEF_APP{% endblock %}
+
+{% block page_title %}Análisis por Transformador{% endblock %}
+
+{% block page_subtitle %}
+{% if last_update %}
+Datos actualizados al: {{ last_update|date:"d/m/Y h:i A" }}
+{% endif %}
+{% endblock %}
+
+{% load humanize %}
+
+{% block content %}
+<div style="display: flex; flex-direction: column; gap: 2rem;">
+
+    <!-- Buscador Optimizado -->
+    <div class="card" style="border-left: 4px solid var(--primary); max-width: 500px;">
+        <form method="GET" action="{% url 'transformer' %}" style="display: flex; gap: 1rem; align-items: flex-end;">
+            <div style="flex-grow: 1;">
+                <label
+                    style="display: block; margin-bottom: 0.5rem; font-size: 0.85rem; font-weight: 600; color: var(--text-main);">
+                    ID Transformador
+                </label>
+                <div style="position: relative;">
+                    <i class="fas fa-bolt"
+                        style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--primary);"></i>
+                    <input type="text" name="transformer_id" value="{{ transformer_id }}" placeholder="Ej: 123456789"
+                        required
+                        style="width: 100%; background: var(--bg-main); border: 1px solid var(--glass-border); padding: 12px 12px 12px 35px; border-radius: 10px; color: var(--text-main); font-weight: 600;">
+                </div>
+            </div>
+            <button type="submit" class="btn-primary"
+                style="height: 48px; padding: 0 1.5rem; border-radius: 10px; white-space: nowrap;">
+                <i class="fas fa-search"></i> Analizar
+            </button>
+        </form>
+    </div>
+
+    {% if error_message %}
+    <div class="card" style="border-left: 4px solid #ef4444; background: rgba(239, 68, 68, 0.05);">
+        <p style="color: #ef4444; font-weight: 600; margin: 0;"><i class="fas fa-exclamation-triangle"></i> {{
+            error_message }}</p>
+    </div>
+    {% endif %}
+
+    {% if chart_labels %}
+    <!-- Resumen Comercial Expandido -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+        <div class="card" style="padding: 1.2rem; border-bottom: 3px solid var(--primary);">
+            <div style="color: var(--primary); font-size: 0.7rem; font-weight: 700; text-transform: uppercase;">Cuentas
+            </div>
+            <div style="font-size: 1.6rem; font-weight: 800; margin: 0.3rem 0;">{{
+                summary.cuentas|floatformat:0|intcomma }}</div>
+            <div style="color: var(--text-muted); font-size: 0.75rem;">Periodo: {{ summary.ultimo_periodo }}</div>
+        </div>
+        <div class="card" style="padding: 1.2rem; border-bottom: 3px solid var(--secondary);">
+            <div style="color: var(--secondary); font-size: 0.7rem; font-weight: 700; text-transform: uppercase;">
+                Ubicación</div>
+            <div
+                style="font-size: 1.1rem; font-weight: 700; margin: 0.3rem 0; color: var(--text-main); height: 2.2rem; overflow: hidden; text-overflow: ellipsis;">
+                {{ summary.barrio }}</div>
+            <div style="color: var(--text-muted); font-size: 0.75rem;">Barrio Detectado</div>
+        </div>
+        <div class="card" style="padding: 1.2rem; border-bottom: 3px solid #ef4444;">
+            <div style="color: #ef4444; font-size: 0.7rem; font-weight: 700; text-transform: uppercase;">Deuda Hoy
+            </div>
+            <div style="font-size: 1.4rem; font-weight: 800; margin: 0.3rem 0;">$ {{
+                summary.deuda|floatformat:0|intcomma }}</div>
+            <div style="color: var(--text-muted); font-size: 0.75rem;">Saldo pendiente</div>
+        </div>
+        <div class="card" style="padding: 1.2rem; border-bottom: 3px solid #10b981;">
+            <div style="color: #10b981; font-size: 0.7rem; font-weight: 700; text-transform: uppercase;">Pagos
+                Registrados</div>
+            <div style="font-size: 1.4rem; font-weight: 800; margin: 0.3rem 0;">{{
+                summary.pagos_total|floatformat:0|intcomma }}</div>
+            <div style="color: #10b981; font-size: 0.8rem; font-weight: 700;">({{ summary.pagos_pct|floatformat:2 }}%)
+                Cobertura</div>
+        </div>
+        <div class="card" style="padding: 1.2rem; border-bottom: 3px solid #6366f1;">
+            <div style="color: #6366f1; font-size: 0.7rem; font-weight: 700; text-transform: uppercase;">Territorial
+            </div>
+            <div style="font-size: 1rem; font-weight: 700; margin: 0.3rem 0; color: var(--text-main);">{{
+                summary.territorial }}</div>
+            <div style="color: var(--text-muted); font-size: 0.75rem;">Circuito: {{ summary.circuito }}</div>
+        </div>
+    </div>
+
+    <!-- Visualización Principal -->
+    <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+            <h3 style="margin: 0; font-weight: 700;"><i class="fas fa-chart-area" style="color: var(--primary);"></i>
+                Tendencia Histórica</h3>
+            <div
+                style="display: flex; background: var(--bg-main); padding: 5px; border-radius: 10px; border: 1px solid var(--glass-border);">
+                <button onclick="switchMode('chart')" id="btnChart" class="toggle-btn active"
+                    style="padding: 8px 15px; border-radius: 8px; border: none; cursor: pointer; font-size: 0.85rem; font-weight: 600; display: flex; align-items: center; gap: 0.5rem;">
+                    <i class="fas fa-chart-line"></i> Gráfica
+                </button>
+                <button onclick="switchMode('table')" id="btnTable" class="toggle-btn"
+                    style="padding: 8px 15px; border-radius: 8px; border: none; background: none; color: var(--text-muted); cursor: pointer; font-size: 0.85rem; font-weight: 600; display: flex; align-items: center; gap: 0.5rem;">
+                    <i class="fas fa-table"></i> Tabla
+                </button>
+            </div>
+        </div>
+
+        <!-- Contenedor de Gráfica con Scroll -->
+        <div id="chartContainer" style="width: 100%; height: 450px; overflow-x: auto; position: relative;">
+            <div style="min-width: 1200px; height: 100%;">
+                <canvas id="transformerChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Contenedor de Tabla -->
+        <div id="tableContainer" style="display: none;">
+            <table id="resultsTable" class="display" style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
+                <thead style="background: var(--bg-main); color: var(--text-muted);">
+                    <tr>
+                        <th style="padding: 1rem;">Periodo</th>
+                        <th style="padding: 1rem;">Facturado ($)</th>
+                        <th style="padding: 1rem;">Recaudo ($)</th>
+                        <th style="padding: 1rem;">Deuda Hoy ($)</th>
+                        <th style="padding: 1rem;">Efectividad</th>
+                        <th style="padding: 1rem;">Pagos (%)</th>
+                        <th style="padding: 1rem;">Consumo (kWh)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in history_table %}
+                    <tr style="color: var(--text-main);">
+                        <td style="font-weight: 700;">{{ row.PERIODO }}</td>
+                        <td>$ {{ row.FACTURADO|floatformat:0|intcomma }}</td>
+                        <td>$ {{ row.RECAUDO|floatformat:0|intcomma }}</td>
+                        <td style="color: #ef4444; font-weight: 600;">$ {{ row.DEUDA_MES|floatformat:0|intcomma }}</td>
+                        <td>
+                            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                                <span
+                                    style="font-weight: 700; color: {% if row.EFECTIVIDAD > 90 %}#10b981{% elif row.EFECTIVIDAD > 70 %}#f59e0b{% else %}#ef4444{% endif %};">
+                                    {{ row.EFECTIVIDAD }}%
+                                </span>
+                            </div>
+                        </td>
+                        <td>
+                            <div style="font-weight: 600;">{{ row.PAGOS|intcomma }}</div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted);">{{ row.PCT_PAGOS }}%</div>
+                        </td>
+                        <td>{{ row.CONSUMO|floatformat:0|intcomma }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+
+<style>
+    .toggle-btn.active {
+        background: var(--primary) !important;
+        color: white !important;
+        box-shadow: 0 4px 10px rgba(59, 130, 246, 0.3);
+    }
+
+    .toggle-btn:not(.active) {
+        background: none;
+        color: var(--text-muted);
+    }
+
+    .toggle-btn:not(.active):hover {
+        background: var(--glass-bg);
+        color: var(--text-main);
+    }
+
+    /* Estilos para DataTables */
+    .dataTables_wrapper .dataTables_length select,
+    .dataTables_wrapper .dataTables_filter input {
+        background: var(--bg-main);
+        color: var(--text-main);
+        border: 1px solid var(--glass-border);
+        border-radius: 6px;
+        padding: 4px;
+    }
+</style>
+
+{% if chart_labels %}
+<script>
+    $(document).ready(function () {
+        $('#resultsTable').DataTable({
+            dom: 'Bfrtip',
+            buttons: [
+                {
+                    extend: 'copy',
+                    text: '<i class="fas fa-copy"></i> Copiar',
+                    className: 'btn-dt'
+                },
+                {
+                    extend: 'excel',
+                    text: '<i class="fas fa-file-excel"></i> Excel',
+                    className: 'btn-dt'
+                },
+                {
+                    extend: 'print',
+                    text: '<i class="fas fa-print"></i> Imprimir',
+                    className: 'btn-dt'
+                }
+            ],
+            language: {
+                url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json'
+            },
+            order: [[0, 'desc']],
+            pageLength: 12
+        });
+    });
+
+    function switchMode(mode) {
+        const chartDiv = document.getElementById('chartContainer');
+        const tableDiv = document.getElementById('tableContainer');
+        const btnChart = document.getElementById('btnChart');
+        const btnTable = document.getElementById('btnTable');
+
+        if (mode === 'chart') {
+            chartDiv.style.display = 'block';
+            tableDiv.style.display = 'none';
+            btnChart.classList.add('active');
+            btnTable.classList.remove('active');
+            btnTable.style.background = 'none';
+        } else {
+            chartDiv.style.display = 'none';
+            tableDiv.style.display = 'block';
+            btnTable.classList.add('active');
+            btnChart.classList.remove('active');
+            btnChart.style.background = 'none';
+        }
+    }
+
+    // Configuración de Chart.js
+    const ctx = document.getElementById('transformerChart').getContext('2d');
+    const chartData = {
+        labels: {{ chart_labels| safe }},
+    datasets: [
+        {
+            label: 'Facturado ($)',
+            type: 'bar',
+            data: {{ chart_facturado| safe }},
+        backgroundColor: 'rgba(99, 102, 241, 0.2)',
+        borderColor: 'rgba(99, 102, 241, 1)',
+        borderWidth: 1,
+        borderRadius: 5,
+        yAxisID: 'y'
+            },
+        {
+            label: 'Recaudo ($)',
+            type: 'bar',
+            data: {{ chart_recaudo| safe }},
+        backgroundColor: 'rgba(16, 185, 129, 0.6)',
+        borderColor: 'rgba(16, 185, 129, 1)',
+        borderWidth: 1,
+        borderRadius: 5,
+        yAxisID: 'y'
+            },
+        {
+            label: 'Deuda Hoy ($)',
+            type: 'line',
+            data: {{ chart_deuda| safe }},
+        borderColor: '#ef4444',
+        borderDash: [5, 5],
+        pointBackgroundColor: '#ef4444',
+        borderWidth: 2,
+        tension: 0.1,
+        yAxisID: 'y'
+            },
+        {
+            label: 'Efectividad (%)',
+            type: 'line',
+            data: {{ chart_efectividad| safe }},
+        borderColor: '#f59e0b',
+        pointBackgroundColor: '#f59e0b',
+        borderWidth: 3,
+        tension: 0.4,
+        yAxisID: 'y1'
+            }
+    ]
+    };
+
+    new Chart(ctx, {
+        data: chartData,
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            interaction: { mode: 'index', intersect: false },
+            plugins: {
+                legend: { position: 'top', labels: { usePointStyle: true, font: { family: 'Inter', size: 12 } } }
+            },
+            scales: {
+                y: {
+                    type: 'linear',
+                    display: true,
+                    position: 'left',
+                    title: { display: true, text: 'Valores Facturación/Recaudo' },
+                    grid: { color: 'rgba(156, 163, 175, 0.1)' },
+                    grace: '5%'
+                },
+                y1: {
+                    type: 'linear',
+                    display: true,
+                    position: 'right',
+                    min: 0,
+                    suggestedMax: 120,
+                    title: { display: true, text: 'Efectividad %' },
+                    grid: { drawOnChartArea: false },
+                    grace: '5%'
+                }
+            },
+            datasets: {
+                bar: {
+                    barPercentage: 0.7,
+                    categoryPercentage: 0.8
+                }
+            }
+        }
+    });
+</script>
+{% endif %}
+{% endblock %}

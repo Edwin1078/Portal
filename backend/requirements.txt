@@ -1,0 +1,12 @@
+
+django<5
+django-cors-headers
+mysqlclient
+mysql-connector-python
+passlib[bcrypt]
+python-jose[cryptography]
+python-dotenv
+python-multipart
+djangorestframework
+oracledb
+pandas

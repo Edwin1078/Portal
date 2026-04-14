@@ -1,0 +1,265 @@
+{% extends 'bdef/base_bdef.html' %}
+{% load humanize l10n %}
+
+{% block title %}Consulta por Transformador - BDEF_APP{% endblock %}
+
+{% block page_title %}Análisis por Transformador{% endblock %}
+
+{% block page_subtitle %}
+{% if last_update %}
+Datos actualizados al: {{ last_update|date:"d/m/Y h:i A" }}
+{% endif %}
+{% endblock %}
+
+{% block content %}
+<div style="display: flex; flex-direction: column; gap: 2rem;">
+
+    <!-- Buscador Optimizado -->
+    <div class="card" style="border-left: 4px solid var(--primary); max-width: 500px;">
+        <form method="GET" action="{% url 'bdef_transformer' %}" style="display: flex; gap: 1rem; align-items: flex-end;">
+            <input type="hidden" name="token" value="{{ request.GET.token }}">
+            <div style="flex-grow: 1;">
+                <label
+                    style="display: block; margin-bottom: 0.5rem; font-size: 0.85rem; font-weight: 600; color: var(--text-main);">
+                    ID Transformador
+                </label>
+                <div style="position: relative;">
+                    <i class="fas fa-bolt"
+                        style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--primary);"></i>
+                    <input type="text" name="transformer_id" value="{{ transformer_id }}" placeholder="Ej: 123456789"
+                        required
+                        style="width: 100%; background: var(--bg-main); border: 1px solid var(--glass-border); padding: 12px 12px 12px 35px; border-radius: 10px; color: var(--text-main); font-weight: 600;">
+                </div>
+            </div>
+            <button type="submit" class="btn-primary"
+                style="height: 48px; padding: 0 1.5rem; border-radius: 10px; white-space: nowrap;">
+                <i class="fas fa-search"></i> Analizar
+            </button>
+        </form>
+    </div>
+
+    {% if error_message %}
+    <div class="card" style="border-left: 4px solid #ef4444; background: rgba(239, 68, 68, 0.05);">
+        <p style="color: #ef4444; font-weight: 600; margin: 0;"><i class="fas fa-exclamation-triangle"></i> {{
+            error_message }}</p>
+    </div>
+    {% endif %}
+
+    {% if summary %}
+    <!-- Resumen Comercial Expandido -->
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+        <div class="card" style="padding: 1.2rem; border-bottom: 3px solid var(--primary);">
+            <div style="color: var(--primary); font-size: 0.7rem; font-weight: 700; text-transform: uppercase;">Cuentas
+            </div>
+            <div style="font-size: 1.6rem; font-weight: 800; margin: 0.3rem 0;">{{ summary.CUENTAS|floatformat:0|intcomma }}</div>
+            <div style="color: var(--text-muted); font-size: 0.75rem;">Periodo: {{ summary.PERIODO }}</div>
+        </div>
+        <div class="card" style="padding: 1.2rem; border-bottom: 3px solid var(--secondary);">
+            <div style="color: var(--secondary); font-size: 0.7rem; font-weight: 700; text-transform: uppercase;">
+                Ubicación</div>
+            <div style="font-size: 1.1rem; font-weight: 700; margin: 0.3rem 0; color: var(--text-main); height: 2.2rem; overflow: hidden; text-overflow: ellipsis;">
+                {{ summary.BARRIO }}</div>
+            <div style="color: var(--text-muted); font-size: 0.75rem;">Barrio Detectado</div>
+        </div>
+        <div class="card" style="padding: 1.2rem; border-bottom: 3px solid #ef4444;">
+            <div style="color: #ef4444; font-size: 0.7rem; font-weight: 700; text-transform: uppercase;">Deuda Hoy
+            </div>
+            <div style="font-size: 1.4rem; font-weight: 800; margin: 0.3rem 0;">$ {{ summary.DEUDA_MES|floatformat:0|intcomma }}</div>
+            <div style="color: var(--text-muted); font-size: 0.75rem;">Saldo pendiente</div>
+        </div>
+        <div class="card" style="padding: 1.2rem; border-bottom: 3px solid #6366f1;">
+            <div style="color: #6366f1; font-size: 0.7rem; font-weight: 700; text-transform: uppercase;">Territorial
+            </div>
+            <div style="font-size: 1rem; font-weight: 700; margin: 0.3rem 0; color: var(--text-main);">{{ summary.TERRITORIAL }}</div>
+            <div style="color: var(--text-muted); font-size: 0.75rem;">Circuito: {{ summary.CIRCUITO }}</div>
+        </div>
+    </div>
+
+    <!-- Visualización Principal -->
+    <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem;">
+            <h3 style="margin: 0; font-weight: 700;"><i class="fas fa-chart-area" style="color: var(--primary);"></i>
+                Tendencia Histórica</h3>
+            
+            <div style="background: var(--bg-main); padding: 5px; border-radius: 12px; display: flex; gap: 5px; border: 1px solid var(--glass-border);">
+                <button onclick="setView('chart')" id="btn-chart" style="padding: 8px 15px; border-radius: 8px; border: none; background: var(--primary); color: white; cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: all 0.3s; display: flex; align-items: center; gap: 8px;">
+                    <i class="fas fa-chart-line"></i> Gráfica
+                </button>
+                <button onclick="setView('table')" id="btn-table" style="padding: 8px 15px; border-radius: 8px; border: none; background: transparent; color: var(--text-muted); cursor: pointer; font-size: 0.85rem; font-weight: 600; transition: all 0.3s; display: flex; align-items: center; gap: 8px;">
+                    <i class="fas fa-table"></i> Tabla
+                </button>
+            </div>
+        </div>
+
+        <!-- Contenedor de Gráfica -->
+        <div id="chartContainer" style="height: 400px; width: 100%;">
+            <canvas id="trendChart"></canvas>
+        </div>
+
+        <!-- Contenedor de Tabla (Oculto por defecto) -->
+        <div id="tableContainer" style="display: none;">
+            <table id="resultsTable" class="display" style="width: 100%; border-collapse: collapse; font-size: 0.9rem;">
+                <thead style="background: var(--bg-main); color: var(--text-muted);">
+                    <tr>
+                        <th style="padding: 1rem;">Periodo</th>
+                        <th style="padding: 1rem;">Facturado ($)</th>
+                        <th style="padding: 1rem;">Recaudo ($)</th>
+                        <th style="padding: 1rem;">Deuda Hoy ($)</th>
+                        <th style="padding: 1rem;">Cuentas</th>
+                        <th style="padding: 1rem;">Consumo (kWh)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in history_table %}
+                    <tr style="color: var(--text-main);">
+                        <td style="font-weight: 700;">{{ row.PERIODO }}</td>
+                        <td>$ {{ row.FACTURADO|floatformat:0|intcomma }}</td>
+                        <td>$ {{ row.RECAUDO|floatformat:0|intcomma }}</td>
+                        <td style="color: #ef4444; font-weight: 600;">$ {{ row.DEUDA_MES|floatformat:0|intcomma }}</td>
+                        <td>{{ row.CUENTAS|intcomma }}</td>
+                        <td>{{ row.CONSUMO|floatformat:0|intcomma }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+</div>
+
+{% if summary %}
+<script>
+    function setView(view) {
+        const chartCont = document.getElementById('chartContainer');
+        const tableCont = document.getElementById('tableContainer');
+        const btnChart = document.getElementById('btn-chart');
+        const btnTable = document.getElementById('btn-table');
+
+        if (view === 'chart') {
+            chartCont.style.display = 'block';
+            tableCont.style.display = 'none';
+            btnChart.style.background = 'var(--primary)';
+            btnChart.style.color = 'white';
+            btnTable.style.background = 'transparent';
+            btnTable.style.color = 'var(--text-muted)';
+        } else {
+            chartCont.style.display = 'none';
+            tableCont.style.display = 'block';
+            btnTable.style.background = 'var(--primary)';
+            btnTable.style.color = 'white';
+            btnChart.style.background = 'transparent';
+            btnChart.style.color = 'var(--text-muted)';
+        }
+    }
+
+    $(document).ready(function () {
+        // Inicializar DataTable
+        $('#resultsTable').DataTable({
+            dom: 'Bfrtip',
+            buttons: [
+                { extend: 'copy', text: '<i class="fas fa-copy"></i> Copiar', className: 'btn-dt' },
+                { extend: 'excel', text: '<i class="fas fa-file-excel"></i> Excel', className: 'btn-dt', title: 'Tendencia_Transformador_{{ transformer_id }}' },
+                { extend: 'csv', text: '<i class="fas fa-file-csv"></i> CSV', className: 'btn-dt' }
+            ],
+            language: {
+                processing: "Procesando...",
+                search: "Buscar:",
+                lengthMenu: "Mostrar _MENU_ registros",
+                info: "Mostrando de _START_ a _END_ de _TOTAL_ registros",
+                infoEmpty: "Mostrando 0 a 0 de 0 registros",
+                infoFiltered: "(filtrado de un total de _MAX_ registros)",
+                loadingRecords: "Cargando...",
+                zeroRecords: "No se encontraron resultados",
+                emptyTable: "Ningún dato disponible en esta tabla",
+                paginate: {
+                    first: "Primero",
+                    previous: "Anterior",
+                    next: "Siguiente",
+                    last: "Último"
+                }
+            },
+            order: [[0, 'desc']],
+            pageLength: 12
+        });
+
+        // Preparar Datos para la Gráfica
+        const rawData = [
+            {% for row in history_table %}
+            {
+                periodo: "{{ row.PERIODO }}",
+                facturado: {{ row.FACTURADO|unlocalize|default:0 }},
+                recaudo: {{ row.RECAUDO|unlocalize|default:0 }},
+                deuda: {{ row.DEUDA_MES|unlocalize|default:0 }}
+            },
+            {% endfor %}
+        ].sort((a,b) => a.periodo.localeCompare(b.periodo));
+
+        const ctx = document.getElementById('trendChart').getContext('2d');
+        const isDark = !document.body.classList.contains('light-mode');
+
+        new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: rawData.map(d => d.periodo),
+                datasets: [
+                    {
+                        label: 'Facturado',
+                        data: rawData.map(d => d.facturado),
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    },
+                    {
+                        label: 'Recaudo',
+                        data: rawData.map(d => d.recaudo),
+                        borderColor: '#10b981',
+                        backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                        fill: true,
+                        tension: 0.4
+                    },
+                    {
+                        label: 'Deuda Hoy',
+                        data: rawData.map(d => d.deuda),
+                        borderColor: '#ef4444',
+                        borderDash: [5, 5],
+                        tension: 0.4
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                interaction: { intersect: false, mode: 'index' },
+                scales: {
+                    y: {
+                        beginAtZero: true,
+                        grid: { color: isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)' },
+                        ticks: { color: isDark ? '#94a3b8' : '#64748b' }
+                    },
+                    x: {
+                        grid: { display: false },
+                        ticks: { color: isDark ? '#94a3b8' : '#64748b' }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        position: 'top',
+                        labels: { color: isDark ? '#f8fafc' : '#0f172a', usePointStyle: true, padding: 20 }
+                    },
+                    tooltip: {
+                        padding: 12,
+                        backgroundColor: isDark ? '#1e293b' : '#ffffff',
+                        titleColor: isDark ? '#f8fafc' : '#0f172a',
+                        bodyColor: isDark ? '#cbd5e1' : '#475569',
+                        borderColor: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)',
+                        borderWidth: 1
+                    }
+                }
+            }
+        });
+    });
+</script>
+{% endif %}
+{% endblock %}

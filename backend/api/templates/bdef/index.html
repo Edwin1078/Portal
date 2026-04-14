@@ -1,0 +1,78 @@
+{% extends 'bdef/base_bdef.html' %}
+{% load static %}
+
+{% block title %}BDEF_APP{% endblock %}
+
+{% block page_title %}Dashboard BDEF_APP{% endblock %}
+
+{% block page_subtitle %}
+{% if last_update %}
+Datos al: {{ last_update|date:"d/m/Y h:i" }} {{ last_update|date:"A" }}
+{% endif %}
+{% endblock %}
+
+{% block content %}
+<div style="margin-top: 1.5rem;"></div>
+
+<div class="metric-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+    <!-- Card 1: Recaudo -->
+    <div class="card" style="background: linear-gradient(135deg, rgba(88, 101, 242, 0.1), var(--bg-card)); border-left: 5px solid #5865F2; position: relative; overflow: hidden;">
+        <div style="position: absolute; right: -10px; top: -10px; opacity: 0.1; font-size: 5rem; color: #5865F2;">
+            <i class="fas fa-money-bill-wave"></i>
+        </div>
+        <div style="color: var(--primary); font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.8rem;">
+            Total Recaudo Mensual
+        </div>
+        <div style="font-size: 2.2rem; font-weight: 800; color: var(--text-main); font-family: 'Roboto Mono', monospace;">
+            {{ stats.recaudo }}
+        </div>
+        <div style="display: flex; align-items: center; gap: 0.5rem; margin-top: 1rem; font-size: 0.85rem; color: var(--text-muted);">
+            <span>Recaudo del periodo</span>
+        </div>
+    </div>
+
+    <!-- Card 2: Efectividad -->
+    <div class="card" style="background: linear-gradient(135deg, rgba(236, 72, 153, 0.1), var(--bg-card)); border-left: 5px solid #ec4899; position: relative; overflow: hidden;">
+        <div style="position: absolute; right: -10px; top: -10px; opacity: 0.1; font-size: 5rem; color: #ec4899;">
+            <i class="fas fa-chart-line"></i>
+        </div>
+        <div style="color: #ec4899; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.8rem;">
+            Efectividad del Periodo
+        </div>
+        <div style="font-size: 2.2rem; font-weight: 800; color: var(--text-main); font-family: 'Roboto Mono', monospace;">
+            {{ stats.efectividad }}
+        </div>
+        <div style="display: flex; align-items: center; gap: 0.5rem; margin-top: 1rem; font-size: 0.85rem; color: var(--text-muted);">
+            <div style="width: 100%; height: 6px; background: rgba(0,0,0,0.05); border-radius: 10px; overflow: hidden;">
+                <div style="width: {{ stats.efectividad }}; height: 100%; background: #ec4899; box-shadow: 0 0 10px #ec4899;"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Card 3: Cuentas y Pagos -->
+    <div class="card" style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.1), var(--bg-card)); border-left: 5px solid #10b981; position: relative; overflow: hidden;">
+        <div style="position: absolute; right: -10px; top: -10px; opacity: 0.1; font-size: 5rem; color: #10b981;">
+            <i class="fas fa-users-cog"></i>
+        </div>
+        <div style="color: #10b981; font-size: 0.75rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.8rem;">
+            Cuentas con Pago Aplicado
+        </div>
+        <div style="display: flex; align-items: baseline; gap: 0.6rem;">
+            <div style="font-size: 2.2rem; font-weight: 800; color: var(--text-main); font-family: 'Roboto Mono', monospace;">
+                {{ stats.cuentas_pagos }}
+            </div>
+            <div style="background: rgba(16, 185, 129, 0.2); color: #10b981; padding: 4px 10px; border-radius: 8px; font-weight: 800; font-size: 1rem;">
+                {{ stats.pct_pagos }}
+            </div>
+        </div>
+        <div style="margin-top: 0.8rem; font-size: 0.85rem; color: var(--text-muted);">
+            De un universo total de <strong>{{ stats.cuentas }}</strong> cuentas registradas
+        </div>
+    </div>
+</div>
+
+<div class="card" style="padding: 0; overflow: hidden; border-radius: 16px;">
+    <img src="{% static 'img/dashboard_banner.png' %}" alt="BDEF Dashboard" style="width: 100%; height: 200px; object-fit: cover; display: block;">
+</div>
+{% endblock %}
+}

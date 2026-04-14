@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}BDEF_APP{% endblock %}
+
+{% block page_title %}Dashboard BDEF_APP{% endblock %}
+
+{% block page_subtitle %}
+{% if last_update %}
+Datos al: {{ last_update|date:"d/m/Y h:i" }} {{ last_update|date:"A" }}
+{% endif %}
+{% endblock %}
+
+{% block content %}
+<div style="margin-top: 1.5rem;"></div>
+
+<div class="metric-grid">
+    <div class="card">
+        <div
+            style="color: var(--primary); font-size: 0.8rem; font-weight: 700; text-transform: uppercase; margin-bottom: 0.5rem;">
+            Recaudo Mensual</div>
+        <div style="font-size: 1.8rem; font-weight: 700;">{{ stats.recaudo }}</div>
+        <div style="color: var(--text-muted); font-size: 0.9rem; margin-top: 0.5rem;">
+            Recaudo del periodo
+        </div>
+    </div>
+    <div class="card">
+        <div
+            style="color: var(--secondary); font-size: 0.8rem; font-weight: 700; text-transform: uppercase; margin-bottom: 0.5rem;">
+            Efectividad del Periodo</div>
+        <div style="font-size: 1.8rem; font-weight: 700;">{{ stats.efectividad }}</div>
+        <div style="color: var(--text-muted); font-size: 0.9rem; margin-top: 0.5rem;">
+            Mes Actual
+        </div>
+    </div>
+    <div class="card">
+        <div
+            style="color: var(--accent); font-size: 0.8rem; font-weight: 700; text-transform: uppercase; margin-bottom: 0.5rem;">
+            Cuentas Consultadas</div>
+        <div style="font-size: 1.8rem; font-weight: 700;">{{ stats.cuentas }}</div>
+        <div style="color: var(--primary); font-size: 0.9rem; margin-top: 0.5rem;">
+            <i class="fas fa-cash-register"></i> {{ stats.cuentas_pagos }}
+        </div>
+    </div>
+</div>
+
+<div class="card" style="padding: 0; overflow: hidden; border-radius: 16px;">
+    <img src="{% static 'img/dashboard_banner.png' %}" alt="BDEF Dashboard" style="width: 100%; height: 200px; object-fit: cover; display: block;">
+</div>
+{% endblock %}

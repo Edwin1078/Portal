@@ -1,0 +1,200 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}BDEF APP{% endblock %}</title>
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Favicon -->
+    <link rel="icon" type="image/png" href="{% static 'img/logo-SinFondo.png' %}">
+    <!-- Charts -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- jQuery & DataTables -->
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.dataTables.min.css">
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.print.min.js"></script>
+    <!-- Base CSS -->
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+    <aside class="sidebar">
+        <div class="sidebar-header" style="display: flex; align-items: center; gap: 0.8rem; padding: 1.5rem 2rem;">
+            <img src="{% static 'img/logo-SinFondo.png' %}" alt="BDEF_APP Logo" style="height: 32px; width: auto;">
+            <span style="font-weight: 800; letter-spacing: 1.5px; font-size: 1.2rem;">BDEF_APP</span>
+        </div>
+        <nav class="nav-menu">
+            <a href="{% url 'index' %}" class="nav-item {% if request.resolver_match.url_name == 'index' %}active{% endif %}">
+                <i class="fas fa-chart-line"></i> Dashboard
+            </a>
+            <a href="{% url 'individual' %}" class="nav-item {% if request.resolver_match.url_name == 'individual' %}active{% endif %}">
+                <i class="fas fa-user-check"></i> Consulta Individual
+            </a>
+            <a href="{% url 'bulk' %}" class="nav-item {% if request.resolver_match.url_name == 'bulk' %}active{% endif %}">
+                <i class="fas fa-file-csv"></i> Consulta Masiva
+            </a>
+            <a href="{% url 'history' %}" class="nav-item {% if request.resolver_match.url_name == 'history' %}active{% endif %}">
+                <i class="fas fa-history"></i> Reporte Histórico
+            </a>
+            <a href="{% url 'transformer' %}" class="nav-item {% if request.resolver_match.url_name == 'transformer' %}active{% endif %}">
+                <i class="fas fa-bolt"></i> Consulta Transformador
+            </a>
+            <a href="{% url 'territorial' %}" class="nav-item {% if request.resolver_match.url_name == 'territorial' %}active{% endif %}">
+                <i class="fas fa-map-marked-alt"></i> Descarga Territorial
+            </a>
+            <a href="{% url 'deuda' %}" class="nav-item {% if request.resolver_match.url_name == 'deuda' %}active{% endif %}">
+                <i class="fas fa-hand-holding-usd"></i> Consulta Deuda
+            </a>
+            <a href="{% url 'recaudo' %}" class="nav-item {% if request.resolver_match.url_name == 'recaudo' %}active{% endif %}">
+                <i class="fas fa-coins"></i> Consulta Recaudo
+            </a>
+        </nav>
+        <div style="padding: 2rem; border-top: 1px solid var(--glass-border); margin-top: auto;">
+            <div style="display: flex; align-items: center; gap: 1rem;">
+                <div style="width: 40px; height: 40px; border-radius: 50%; background: var(--primary); display: flex; align-items: center; justify-content: center;">
+                    <i class="fas fa-user"></i>
+                </div>
+                <div>
+                    <div style="font-size: 0.9rem; font-weight: 600;">Usuario BDEF</div>
+                    <div style="font-size: 0.8rem; color: var(--text-muted);">Admin</div>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <main class="main-layout" style="display: flex; flex-direction: column; min-height: 100vh;">
+        <header class="top-bar">
+            <div style="display: flex; align-items: center; gap: 1.5rem;">
+                <div style="display: flex; flex-direction: column;">
+                    <h2 style="margin: 0; font-weight: 700; font-size: 1.2rem; color: var(--text-main);">
+                        {% block page_title %}Dashboard{% endblock %}
+                    </h2>
+                    <div style="font-size: 0.75rem; color: var(--text-muted); font-weight: 500;">
+                        {% block page_subtitle %}{% endblock %}
+                    </div>
+                </div>
+            </div>
+            <div class="actions">
+                {% block top_actions %}
+                <button id="themeToggle" class="btn-primary" style="padding: 0 1.2rem; background: var(--bg-card); color: var(--text-main); border: 1px solid var(--glass-border); display: flex; align-items: center; justify-content: center; gap: 0.8rem; height: 45px; border-radius: 12px; transition: all 0.3s ease; white-space: nowrap;">
+                    <i class="fas fa-moon" id="themeIcon" style="font-size: 1.1rem;"></i>
+                    <span style="font-size: 0.8rem; font-weight: 600;">Cambiar Tema</span>
+                </button>
+                {% endblock %}
+            </div>
+        </header>
+
+        <section class="content-container animate-fade" style="flex: 1; padding-bottom: 80px;">
+            {% block content %}{% endblock %}
+        </section>
+
+        <!-- Footer Institucional -->
+        <footer style="background: var(--bg-card); border-top: 1px solid var(--glass-border); padding: 1rem 2rem; display: flex; align-items: center; justify-content: space-between; position: sticky; bottom: 0; z-index: 100;">
+            <div style="display: flex; align-items: center; gap: 1rem;">
+                <img src="{% static 'img/logo-SinFondo.png' %}" alt="Logo" style="height: 24px; opacity: 0.7;">
+                <span style="font-size: 0.75rem; color: var(--text-muted); font-weight: 500;">
+                    &copy; 2026 BDEF_APP | Realizado por <strong>Edwin Rueda</strong> - Gerencia Cobros & Recaudo para <strong>Aire Intervenida</strong>
+                </span>
+            </div>
+            <div style="font-size: 0.7rem; color: var(--text-muted); font-style: italic;">
+                v2.0.1 Stable
+            </div>
+        </footer>
+    </main>
+
+    <!-- Global Loader Overlay -->
+    <div id="globalLoader" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); backdrop-filter: blur(8px); z-index: 99999; flex-direction: column; align-items: center; justify-content: center; color: white; font-family: 'Inter', sans-serif;">
+        <div class="loader-content" style="text-align: center; animation: fadeIn 0.5s ease;">
+            <div class="spinner" style="width: 70px; height: 70px; border: 6px solid rgba(255,255,255,0.1); border-top: 6px solid var(--primary); border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 1.5rem;"></div>
+            <h3 style="font-weight: 700; margin-bottom: 0.5rem; letter-spacing: -0.5px;">BDEF_APP Procesando</h3>
+            <p style="color: rgba(255,255,255,0.8); font-size: 0.95rem; font-weight: 500;">Espere un momento, estamos preparando sus datos...</p>
+        </div>
+    </div>
+
+    <style>
+        @keyframes spin { to { transform: rotate(360deg); } }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .light-mode #globalLoader {
+            background: rgba(255,255,255,0.8);
+            color: var(--text-main);
+        }
+        .light-mode .spinner {
+            border: 6px solid rgba(0,0,0,0.05) !important;
+            border-top: 6px solid var(--primary) !important;
+        }
+    </style>
+
+    <script>
+        const themeToggle = document.getElementById('themeToggle');
+        const themeIcon = document.getElementById('themeIcon');
+        const body = document.body;
+
+        // Mostrar Loader en formularios
+        document.addEventListener('submit', function(e) {
+            if (!e.target.classList.contains('no-loader')) {
+                const loader = document.getElementById('globalLoader');
+                loader.style.display = 'flex';
+                
+                const downloadForms = ['historyDownloadForm', 'bulkDownloadForm', 'territorialForm', 'deudaDownloadForm', 'recaudoDownloadForm'];
+                if (downloadForms.includes(e.target.id)) {
+                    // Poll para detectar la cookie de descarga completada
+                    const pollInterval = setInterval(() => {
+                        if (document.cookie.indexOf('downloadComplete=1') !== -1) {
+                            loader.style.display = 'none';
+                            // Eliminar la cookie
+                            document.cookie = 'downloadComplete=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+                            clearInterval(pollInterval);
+                        }
+                    }, 500);
+                    // Timeout de seguridad (60s)
+                    setTimeout(() => { clearInterval(pollInterval); loader.style.display = 'none'; }, 60000);
+                }
+            }
+        });
+
+        // Mostrar Loader al navegar por los menús
+        document.querySelectorAll('.nav-item').forEach(link => {
+            link.addEventListener('click', function(e) {
+                // Solo si no es el mismo link activo (para no recargar innecesariamente)
+                if (!this.classList.contains('active')) {
+                    document.getElementById('globalLoader').style.display = 'flex';
+                }
+            });
+        });
+
+        // Función para cambiar el tema
+        function toggleTheme() {
+            body.classList.toggle('light-mode');
+            const isLight = body.classList.contains('light-mode');
+            
+            // Cambiar icono
+            themeIcon.className = isLight ? 'fas fa-sun' : 'fas fa-moon';
+            
+            // Guardar preferencia
+            localStorage.setItem('theme', isLight ? 'light' : 'dark');
+        }
+
+        // Cargar preferencia al iniciar
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme === 'light') {
+            body.classList.add('light-mode');
+            themeIcon.className = 'fas fa-sun';
+        }
+
+        themeToggle.addEventListener('click', toggleTheme);
+    </script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

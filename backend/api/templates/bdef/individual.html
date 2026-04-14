@@ -1,0 +1,575 @@
+{% extends 'bdef/base_bdef.html' %}
+{% load humanize %}
+
+{% block title %}Consulta Individual - BDEF_APP{% endblock %}
+{% block page_title %}Consulta Individual{% endblock %}
+
+{% block page_subtitle %}
+{% if last_update %}
+Datos al: {{ last_update|date:"d/m/Y h:i" }} {{ last_update|date:"A" }}
+{% endif %}
+{% endblock %}
+
+{% block extra_css %}
+<!-- DataTables & Buttons CSS -->
+<link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+<style>
+    /* 1. Contenedor Maestro */
+    #viewContainerTable {
+        background: rgba(15, 23, 42, 0.4) !important;
+        backdrop-filter: blur(15px);
+        -webkit-backdrop-filter: blur(15px);
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        border-radius: 16px;
+        padding: 2rem !important;
+        margin-top: 1rem;
+    }
+
+    /* 2. Botones de Exportación (Eliminando el look viejo) */
+    .dt-buttons {
+        margin-bottom: 2rem !important;
+        gap: 12px !important;
+        display: flex !important;
+    }
+
+    button.dt-button, div.dt-button, a.dt-button {
+        background: rgba(255, 255, 255, 0.05) !important;
+        background-image: none !important; /* Quita el degradado viejo */
+        color: #e2e8f0 !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        border-radius: 10px !important;
+        padding: 10px 20px !important;
+        font-size: 0.85rem !important;
+        font-weight: 500 !important;
+        box-shadow: none !important;
+        transition: all 0.3s ease !important;
+    }
+
+    button.dt-button:hover:not(.disabled), div.dt-button:hover:not(.disabled), a.dt-button:hover:not(.disabled) {
+        background: var(--primary) !important;
+        border-color: var(--primary) !important;
+        color: white !important;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3) !important;
+    }
+
+    /* 3. Buscador (Adiós al cuadro blanco) */
+    .dataTables_filter label {
+        color: #94a3b8 !important;
+        font-weight: 500;
+        font-size: 0.9rem;
+    }
+
+    .dataTables_filter input {
+        background: rgba(0, 0, 0, 0.3) !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        border-radius: 12px !important;
+        padding: 10px 15px !important;
+        color: white !important;
+        margin-left: 12px !important;
+        width: 250px !important;
+        outline: none !important;
+        transition: all 0.3s;
+    }
+
+    .dataTables_filter input:focus {
+        border-color: var(--primary) !important;
+        box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2) !important;
+    }
+
+    /* 4. Tabla y Celdas */
+    #historyTable {
+        border: none !important;
+        margin-bottom: 2rem !important;
+    }
+
+    #historyTable thead th {
+        background: rgba(255, 255, 255, 0.02) !important;
+        color: #64748b !important;
+        padding: 15px !important;
+        border-bottom: 2px solid rgba(255, 255, 255, 0.05) !important;
+        font-size: 0.75rem !important;
+    }
+
+    #historyTable tbody td {
+        border-bottom: 1px solid rgba(255, 255, 255, 0.03) !important;
+        padding: 14px 15px !important;
+        color: #f1f5f9 !important;
+        font-family: 'Inter', sans-serif;
+    }
+
+    /* Fuente Mono para datos numéricos */
+    #historyTable tbody td:nth-child(2),
+    #historyTable tbody td:nth-child(3),
+    #historyTable tbody td:nth-child(4) {
+        font-family: 'Roboto Mono', monospace;
+    }
+
+    /* 5. Paginación (Adiós al texto pegado) */
+    .dataTables_paginate {
+        margin-top: 1.5rem !important;
+        display: flex !important;
+        gap: 8px !important;
+    }
+
+    .dataTables_paginate .paginate_button {
+        background: rgba(255, 255, 255, 0.05) !important;
+        border: 1px solid rgba(255, 255, 255, 0.05) !important;
+        border-radius: 8px !important;
+        padding: 6px 14px !important;
+        color: #94a3b8 !important;
+        cursor: pointer !important;
+        transition: all 0.2s !important;
+    }
+
+    .dataTables_paginate .paginate_button:hover {
+        background: rgba(255, 255, 255, 0.1) !important;
+        color: white !important;
+        border-color: rgba(255, 255, 255, 0.2) !important;
+    }
+
+    .dataTables_paginate .paginate_button.current {
+        background: var(--primary) !important;
+        color: white !important;
+        border-color: var(--primary) !important;
+        font-weight: 600;
+    }
+
+    .dataTables_paginate .paginate_button.disabled {
+        opacity: 0.3;
+        cursor: default !important;
+    }
+
+    .dataTables_info {
+        color: #64748b !important;
+        font-size: 0.85rem;
+        margin-top: 1rem;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div style="display: grid; grid-template-columns: 1fr 2fr; gap: 2rem; margin-bottom: 2rem;">
+    <!-- Search Box (Aligned with Commercial Data) -->
+    <div class="card">
+        <form method="GET" action="{% url 'bdef_individual' %}" style="display: flex; gap: 1rem; align-items: flex-end;">
+            <input type="hidden" name="token" value="{{ token }}">
+            <div class="form-group" style="flex: 1; margin-bottom: 0;">
+                <label style="display: block; margin-bottom: 0.5rem; font-size: 0.9rem; color: var(--text-muted);">Número de Cuenta</label>
+                <input type="text" name="account" class="input-control" placeholder="Ej: 12345678" value="" required>
+            </div>
+            <button type="submit" class="btn-primary" style="padding: 12px 15px;" title="Buscar">
+                <i class="fas fa-search"></i>
+            </button>
+            <a href="{% url 'bdef_individual' %}?token={{ request.GET.token }}" class="btn-toggle" style="background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2); height: 45px; display: flex; align-items: center; justify-content: center; padding: 0 15px; border-radius: 12px; text-decoration: none;" title="Limpiar Pantalla">
+                <i class="fas fa-broom"></i> <span style="font-size: 0.8rem; font-weight: 600;">Limpiar</span>
+            </a>
+        </form>
+    </div>
+
+    <!-- Quick KPIs (Aligned with History/Chart) -->
+    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem;">
+        {% if commercial_data %}
+        <div class="card" style="display: flex; align-items: center; gap: 1.5rem; border-left: 4px solid var(--secondary);">
+            <div style="background: rgba(244, 63, 94, 0.1); width: 50px; height: 50px; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: var(--secondary);">
+                <i class="fas fa-hand-holding-usd" style="font-size: 1.5rem;"></i>
+            </div>
+            <div>
+                <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Deuda Hoy</div>
+                <div style="font-size: 1.4rem; font-weight: 800; color: var(--text-main); font-family: 'Roboto Mono';">
+                    ${{ commercial_data.deuda_hoy|floatformat:0|intcomma }}
+                </div>
+            </div>
+        </div>
+        <div class="card" style="display: flex; align-items: center; gap: 1.5rem; border-left: 4px solid var(--primary);">
+            <div style="background: rgba(59, 130, 246, 0.1); width: 50px; height: 50px; border-radius: 12px; display: flex; align-items: center; justify-content: center; color: var(--primary);">
+                <i class="fas fa-file-invoice" style="font-size: 1.5rem;"></i>
+            </div>
+            <div>
+                <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase;">Facturas Pendientes</div>
+                <div style="font-size: 1.4rem; font-weight: 800; color: var(--text-main);">
+                    {{ commercial_data.cantidad_facturas|default:"0" }}
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="card" style="grid-column: span 2; display: flex; align-items: center; justify-content: center; border: 1px dashed rgba(255,255,255,0.1);">
+            <p style="color: var(--text-muted); font-size: 0.9rem;">Realice una consulta para ver los KPIs financieros</p>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Error Message -->
+{% if error_message %}
+<div class="card" style="border-left: 4px solid var(--secondary); margin-bottom: 2rem;">
+    <div style="display: flex; align-items: center; gap: 1rem; color: var(--secondary);">
+        <i class="fas fa-bug" style="font-size: 1.5rem;"></i>
+        <div>
+            <h4 style="margin: 0;">Error de Procesamiento</h4>
+            <p style="margin: 0; font-size: 0.9rem; color: var(--text-muted);">{{ error_message }}</p>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+{% if commercial_data or history %}
+<div style="display: grid; grid-template-columns: 1fr 2fr; gap: 2rem;">
+    <!-- Commercial Data -->
+    <div class="card">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 0.5rem;">
+            <h3 style="margin: 0;">Datos Comerciales</h3>
+            <button onclick="toggleFieldSelector()" class="btn-ghost" style="font-size: 0.75rem; padding: 5px 10px;">
+                <i class="fas fa-cog"></i> Personalizar
+            </button>
+        </div>
+
+        <!-- Panel de Selección de Campos (Oculto por defecto) -->
+        <div id="fieldSelector" style="display: none; background: rgba(0,0,0,0.2); border-radius: 8px; padding: 1rem; margin-bottom: 1.5rem; border: 1px dashed rgba(255,255,255,0.1);">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                <p style="font-size: 0.75rem; color: var(--text-muted); margin: 0;">Seleccione los datos que desea visualizar:</p>
+                <input type="text" id="searchFields" placeholder="🔍 Buscar campo..." 
+                       style="padding: 4px 8px; border-radius: 6px; border: 1px solid var(--glass-border); 
+                              background: var(--bg-dark); color: var(--text-main); font-size: 0.75rem; width: 150px;">
+            </div>
+            <div id="fieldsWrapper" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 0.5rem; max-height: 250px; overflow-y: auto; padding-right: 5px;">
+                {% for label, data in all_commercial_fields.items %}
+                <label class="field-label-item" style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.75rem; cursor: pointer; background: rgba(255,255,255,0.03); padding: 5px 8px; border-radius: 4px;">
+                    <input type="checkbox" class="field-toggle" data-field="{{ data.id }}" 
+                           {% if data.id in 'periodo,cuenta,producto,nombre_cliente,estado_suministro,estado_corte,estado_cuenta,tipo_medida,tipo_conexion,id_medidor,marca_medidor,subcategoria_comercial,departamento,municipio,direccion_cliente,tarifa,estrato' %}checked{% endif %}
+                           onchange="updateVisibleFields()">
+                    <span class="field-name-text">{{ label }}</span>
+                </label>
+                {% endfor %}
+            </div>
+        </div>
+
+        <div id="commercialDetailsList">
+            {% if commercial_data %}
+                {% for label, data in all_commercial_fields.items %}
+                <div class="comm-item" data-field-id="{{ data.id }}" style="margin-bottom: 1rem; {% if data.id not in 'periodo,cuenta,producto,nombre_cliente,estado_suministro,estado_corte,estado_cuenta,tipo_medida,tipo_conexion,id_medidor,marca_medidor,subcategoria_comercial,departamento,municipio,direccion_cliente,tarifa' %}display: none;{% endif %}">
+                    <div style="font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px;">{{ label }}</div>
+                    <div style="font-weight: 600; font-size: 0.95rem; color: var(--text-main);">{{ data.val|default:'N/A' }}</div>
+                </div>
+                {% endfor %}
+            {% else %}
+                <p style="color: var(--text-muted);">Información comercial no disponible.</p>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- History Section with Switcher -->
+    <div style="display: flex; flex-direction: column; gap: 2rem;">
+        
+        <!-- Alerta de Periodo Ajustado (Fallback) -->
+        {% if varianzas.is_fallback %}
+        <div class="card" style="background: rgba(245, 158, 11, 0.1); border-left: 5px solid #f59e0b; padding: 1.25rem; margin-bottom: 0.5rem; display: flex; align-items: flex-start; gap: 1.2rem; animation: pulse-border 2s infinite;">
+            <div style="background: #f59e0b; color: white; width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);">
+                <i class="fas fa-calendar-check" style="font-size: 1.1rem;"></i>
+            </div>
+            <div>
+                <h4 style="margin: 0 0 0.3rem 0; color: #f59e0b; font-size: 1rem; font-weight: 700;">Base de Comparación Ajustada</h4>
+                <p style="margin: 0; font-size: 0.85rem; color: var(--text-main); line-height: 1.5;">
+                    Debido a que el periodo actual no presenta facturación, los indicadores de varianza se han calculado tomando como referencia el último mes con actividad: <strong style="color: #f59e0b; background: rgba(245, 158, 11, 0.1); padding: 2px 6px; border-radius: 4px;">{{ varianzas.periodo_act }}</strong>.
+                </p>
+            </div>
+        </div>
+        <style>
+            @keyframes pulse-border {
+                0% { border-left-color: #f59e0b; }
+                50% { border-left-color: #fbbf24; }
+                100% { border-left-color: #f59e0b; }
+            }
+        </style>
+        {% endif %}
+
+        <!-- Variance Analysis Cards -->
+        {% if varianzas %}
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem;">
+            <!-- MoM Comparison -->
+            <div class="card" style="border-top: 4px solid var(--primary);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                    <h4 style="margin:0;">Comparativa Mes Anterior</h4>
+                    <span class="badge badge-success">Vs. Mes -1</span>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 0.8rem;">
+                    <div style="display: flex; justify-content: space-between;">
+                        <span style="color: var(--text-muted);">Consumo:</span>
+                        <span style="font-weight:600; color: {% if varianzas.mes_ant.consumo.val > 0 %}#f87171{% else %}#34d399{% endif %};">
+                            {{ varianzas.mes_ant.consumo.val|floatformat:0 }} kWh ({{ varianzas.mes_ant.consumo.pct }}%)
+                        </span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between;">
+                        <span style="color: var(--text-muted);">Facturado:</span>
+                        <span style="font-weight:600; color: {% if varianzas.mes_ant.facturado.val > 0 %}#f87171{% else %}#34d399{% endif %};">
+                            ${{ varianzas.mes_ant.facturado.val|floatformat:0|intcomma }} ({{ varianzas.mes_ant.facturado.pct }}%)
+                        </span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between;">
+                        <span style="color: var(--text-muted);">Recaudo:</span>
+                        <span style="font-weight:600; color: {% if varianzas.mes_ant.recaudo.val > 0 %}#34d399{% else %}#f87171{% endif %};">
+                            ${{ varianzas.mes_ant.recaudo.val|floatformat:0|intcomma }} ({{ varianzas.mes_ant.recaudo.pct }}%)
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- YoY Comparison -->
+            <div class="card" style="border-top: 4px solid var(--secondary);">
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+                    <h4 style="margin:0;">Comparativa Año Anterior</h4>
+                    <span class="badge" style="background: var(--secondary);">Vs. Año -1</span>
+                </div>
+                <div style="display: flex; flex-direction: column; gap: 0.8rem;">
+                    <div style="display: flex; justify-content: space-between;">
+                        <span style="color: var(--text-muted);">Consumo:</span>
+                        <span style="font-weight:600; color: {% if varianzas.anio_ant.consumo.val > 0 %}#f87171{% else %}#34d399{% endif %};">
+                            {{ varianzas.anio_ant.consumo.val|floatformat:0 }} kWh ({{ varianzas.anio_ant.consumo.pct }}%)
+                        </span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between;">
+                        <span style="color: var(--text-muted);">Facturado:</span>
+                        <span style="font-weight:600; color: {% if varianzas.anio_ant.facturado.val > 0 %}#f87171{% else %}#34d399{% endif %};">
+                            ${{ varianzas.anio_ant.facturado.val|floatformat:0|intcomma }} ({{ varianzas.anio_ant.anio_ant }}%)
+                        </span>
+                    </div>
+                    <div style="display: flex; justify-content: space-between;">
+                        <span style="color: var(--text-muted);">Recaudo:</span>
+                        <span style="font-weight:600; color: {% if varianzas.anio_ant.recaudo.val > 0 %}#34d399{% else %}#f87171{% endif %};">
+                            ${{ varianzas.anio_ant.recaudo.val|floatformat:0|intcomma }} ({{ varianzas.anio_ant.recaudo.pct }}%)
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Interactive History Card -->
+        <div class="card">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.5rem; border-bottom: 1px solid var(--glass-border); padding-bottom: 0.5rem;">
+                <h3 style="margin:0;">Histórico de Datos</h3>
+                <div style="display: flex; background: rgba(0,0,0,0.2); border-radius: 8px; padding: 4px; gap: 4px;">
+                    <button id="showChart" class="btn-toggle active" onclick="switchView('chart')">
+                        <i class="fas fa-chart-line"></i> Gráfica
+                    </button>
+                    <button id="showTable" class="btn-toggle" onclick="switchView('table')">
+                        <i class="fas fa-table"></i> Tabla
+                    </button>
+                </div>
+            </div>
+
+            <!-- Chart View -->
+            <div id="viewContainerChart" style="height: 400px;">
+                <canvas id="historyChart"></canvas>
+            </div>
+
+            <!-- Table View (Hidden by default) -->
+            <div id="viewContainerTable" class="table-container" style="display: none; padding: 1rem;">
+                <table id="historyTable" class="display cell-border" style="width:100%; color: var(--text-main); background: var(--bg-card);">
+                    <thead>
+                        <tr>
+                            <th>Periodo</th>
+                            <th>Consumo</th>
+                            <th>Facturado</th>
+                            <th>Recaudo</th>
+                            <th>Efectividad</th>
+                            <th>Días</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in history %}
+                        <tr>
+                            <td>{{ row.periodo_display }}</td>
+                            <td>{{ row.consumo|floatformat:0|intcomma }}</td>
+                            <td>${{ row.facturado|floatformat:0|intcomma }}</td>
+                            <td>${{ row.recaudo|floatformat:0|intcomma }}</td>
+                            <td>
+                                <span class="badge {% if row.efectividad >= 90 %}badge-success{% else %}badge-danger{% endif %}">
+                                    {{ row.efectividad }}%
+                                </span>
+                            </td>
+                            <td>{{ row.dias|floatformat:0 }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% elif account %}
+<div class="card" style="text-align: center; padding: 4rem;">
+    <i class="fas fa-exclamation-circle" style="font-size: 3rem; color: var(--secondary); margin-bottom: 1rem;"></i>
+    <h3>No se encontraron resultados</h3>
+    <p style="color: var(--text-muted);">Verifique el número de cuenta e intente nuevamente.</p>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block extra_js %}
+<!-- jQuery y DataTables JS -->
+<script src="https://code.jquery.com/jquery-3.7.0.js"></script>
+<script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/pdfmake.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/pdfmake/0.1.53/vfs_fonts.js"></script>
+<script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>
+
+<script>
+    {% if chart_data_json %}
+    (function() {
+        try {
+            const rawData = {{ chart_data_json|safe }};
+            const chartData = {
+                labels: rawData.labels || [],
+                consumo: (rawData.consumo || []).map(v => v || 0),
+                facturado: (rawData.facturado || []).map(v => v || 0),
+                recaudo: (rawData.recaudo || []).map(v => v || 0)
+            };
+            
+            const ctx = document.getElementById('historyChart').getContext('2d');
+            new Chart(ctx, {
+                data: {
+                    labels: chartData.labels,
+                    datasets: [
+                        {
+                            label: 'Consumo (kWh)',
+                            data: chartData.consumo,
+                            backgroundColor: 'rgba(88, 101, 242, 0.4)',
+                            borderColor: '#5865F2',
+                            borderWidth: 1,
+                            yAxisID: 'yConsumo',
+                            type: 'bar'
+                        },
+                        {
+                            label: 'Facturado ($)',
+                            data: chartData.facturado,
+                            borderColor: '#EB459E',
+                            backgroundColor: 'rgba(235, 69, 158, 0.1)',
+                            yAxisID: 'yPesos',
+                            type: 'line',
+                            tension: 0.3,
+                            fill: true
+                        },
+                        {
+                            label: 'Recaudado ($)',
+                            data: chartData.recaudo,
+                            borderColor: '#10b981',
+                            backgroundColor: '#10b981',
+                            yAxisID: 'yPesos',
+                            type: 'line',
+                            tension: 0.3
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        yConsumo: {
+                            type: 'linear',
+                            position: 'left',
+                            title: { display: true, text: 'Consumo kWh', color: getComputedStyle(document.body).getPropertyValue('--text-muted').trim() },
+                            grid: { color: 'rgba(128,128,128,0.1)' },
+                            ticks: { color: getComputedStyle(document.body).getPropertyValue('--text-muted').trim() }
+                        },
+                        yPesos: {
+                            type: 'linear',
+                            position: 'right',
+                            title: { display: true, text: 'Valor ($)', color: getComputedStyle(document.body).getPropertyValue('--text-muted').trim() },
+                            grid: { drawOnChartArea: false },
+                            ticks: { color: getComputedStyle(document.body).getPropertyValue('--text-muted').trim() }
+                        },
+                        x: {
+                            grid: { color: 'rgba(128,128,128,0.1)' },
+                            ticks: { color: getComputedStyle(document.body).getPropertyValue('--text-muted').trim() }
+                        }
+                    },
+                    plugins: {
+                        legend: { labels: { color: getComputedStyle(document.body).getPropertyValue('--text-main').trim() } }
+                    }
+                }
+            });
+        } catch (e) {
+            console.error("Error al renderizar la gráfica:", e);
+        }
+    })();
+    {% endif %}
+
+    function initDataTable() {
+        if (!$.fn.DataTable.isDataTable('#historyTable')) {
+            $('#historyTable').DataTable({
+                // dom: 'Bfrtip' Original, lo cambiamos para dar espacio
+                dom: '<"top-controls"Bf>rt<"bottom-controls"ip><"clear">',
+                buttons: [
+                    {
+                        extend: 'excelHtml5',
+                        text: '<i class="fas fa-file-excel"></i> Exportar a Excel',
+                        title: 'Historial_Cuenta_{{ commercial_data.CUENTA }}',
+                        className: 'dt-button'
+                    },
+                    {
+                        extend: 'csvHtml5',
+                        text: '<i class="fas fa-file-csv"></i> Exportar a CSV',
+                        title: 'Historial_Cuenta_{{ commercial_data.CUENTA }}',
+                        className: 'dt-button'
+                    }
+                ],
+                language: {
+                    url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json'
+                },
+                responsive: true,
+                order: [[0, 'desc']],
+                pageLength: 12
+            });
+        }
+    }
+
+    function switchView(view) {
+        const chartCont = document.getElementById('viewContainerChart');
+        const tableCont = document.getElementById('viewContainerTable');
+        const btnChart = document.getElementById('showChart');
+        const btnTable = document.getElementById('showTable');
+
+        if (view === 'chart') {
+            chartCont.style.display = 'block';
+            tableCont.style.display = 'none';
+            btnChart.classList.add('active');
+            btnTable.classList.remove('active');
+        } else {
+            chartCont.style.display = 'none';
+            tableCont.style.display = 'block';
+            initDataTable();
+            btnChart.classList.remove('active');
+            btnTable.classList.add('active');
+        }
+    }
+    function toggleFieldSelector() {
+        $('#fieldSelector').slideToggle(300);
+    }
+
+    function updateVisibleFields() {
+        $('.field-toggle').each(function() {
+            const fieldId = $(this).data('field');
+            const isChecked = $(this).is(':checked');
+            const item = $(`.comm-item[data-field-id="${fieldId}"]`);
+            if (isChecked) item.show();
+            else item.hide();
+        });
+    }
+
+    $(document).ready(function() {
+        updateVisibleFields();
+
+        // Buscador de campos en tiempo real
+        $('#searchFields').on('keyup', function() {
+            const value = $(this).val().toLowerCase();
+            $('.field-label-item').each(function() {
+                const text = $(this).find('.field-name-text').text().toLowerCase();
+                $(this).toggle(text.indexOf(value) > -1);
+            });
+        });
+    });
+</script>
+{% endblock %}

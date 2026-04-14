@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="es">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portal GCR</title>
+    <link rel="icon" type="image/png" href="/assets/logo-SinFondo.png">
+    <!-- Modern Fonts -->
+    <link
+        href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&family=Inter:wght@300;400;500;600;700&display=swap"
+        rel="stylesheet">
+    <!-- Styles -->
+    <link rel="stylesheet" href="/css/index.css">
+    <!-- Scripts -->
+    <script src="https://code.jquery.com/jquery-3.7.0.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.datatables.net/1.13.6/css/jquery.dataTables.min.css">
+    <link rel="stylesheet" href="https://cdn.datatables.net/buttons/2.4.1/css/buttons.dataTables.min.css">
+    <script src="https://cdn.datatables.net/1.13.6/js/jquery.dataTables.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.4.1/js/dataTables.buttons.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.html5.min.js"></script>
+    <script src="https://cdn.datatables.net/buttons/2.4.1/js/buttons.print.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+</head>
+
+<body class="auth-mode">
+
+    <!-- App Sidebar -->
+    <aside id="sidebar" class="hidden">
+        <div class="sidebar-logo">
+            <img src="/assets/logo-SinFondo.png" alt="Logo" style="height: 32px; width: auto;">
+            <span style="font-weight: 800; letter-spacing: -0.02em; color: var(--text-main);">PORTAL GCR</span>
+        </div>
+
+        <nav class="nav-menu">
+            <div class="nav-label">Menu Principal</div>
+            <div class="nav-item active" onclick="showView('user-dashboard')">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6">
+                    </path>
+                </svg>
+                Reportes
+            </div>
+
+            <div id="nav-admin" class="nav-item hidden" onclick="showView('admin')">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z">
+                    </path>
+                </svg>
+                Administrador
+            </div>
+
+            <div id="nav-bdef-label" class="nav-label" style="margin-top: 2rem;">BDEF_APP</div>
+            <div id="nav-bdef-index" class="nav-item" onclick="openBDEF('index')">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 002 2h2a2 2 0 002-2z">
+                    </path>
+                </svg>
+                Resumen BDEF
+            </div>
+            <div id="nav-bdef-individual" class="nav-item" onclick="openBDEF('individual')">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0zM10 7v3m0 0v3m0-3h3m-3 0H7"></path>
+                </svg>
+                Consulta Individual
+            </div>
+            <div id="nav-bdef-bulk" class="nav-item" onclick="openBDEF('bulk')">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z">
+                    </path>
+                </svg>
+                Consulta Masiva
+            </div>
+            <div id="nav-bdef-deuda" class="nav-item" onclick="openBDEF('deuda')">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M12 16v1m-3-9h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z">
+                    </path>
+                </svg>
+                Consulta Deuda
+            </div>
+            <div id="nav-bdef-recaudo" class="nav-item" onclick="openBDEF('recaudo')">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z">
+                    </path>
+                </svg>
+                Consulta Recaudo
+            </div>
+            <div id="nav-bdef-history" class="nav-item" onclick="openBDEF('history')">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                Extracción Histórica
+            </div>
+            <div id="nav-bdef-transformer" class="nav-item" onclick="openBDEF('transformer')">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                </svg>
+                Análisis Transformador
+            </div>
+            <div id="nav-bdef-territorial" class="nav-item" onclick="openBDEF('territorial')">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L16 4m0 13V4m0 0L10 7">
+                    </path>
+                </svg>
+                Descarga Territorial
+            </div>
+
+            <div style="margin-top: auto;"></div>
+        </nav>
+    </aside>
+
+    <!-- Main Content Area -->
+    <main id="main-content">
+
+        <!-- Header Bar -->
+        <header id="app-header" class="hidden"
+            style="display: flex; align-items: center; justify-content: space-between; padding: 1.5rem 0;">
+            <div id="breadcrumb"
+                style="font-size: 0.75rem; color: var(--text-dim); font-weight: 700; text-transform: uppercase;">
+                BIENVENIDO / REPORTES</div>
+
+            <div style="display: flex; align-items: center; gap: 1.5rem;">
+                <!-- Theme Toggle Button (Next to user) -->
+                <div id="theme-toggle-header" onclick="toggleGlobalTheme()"
+                    style="cursor: pointer; padding: 10px; border-radius: 12px; background: var(--bg-white); border: 1px solid var(--border); color: var(--text-dim); transition: all 0.2s; display: flex; align-items: center; justify-content: center;"
+                    title="Cambiar Tema">
+                    <svg id="theme-icon-header" style="width: 1.25rem; height: 1.25rem;" fill="none"
+                        stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z">
+                        </path>
+                    </svg>
+                </div>
+
+                <!-- User Profile with dropdown -->
+                <div id="user-profile" onclick="toggleProfileDropdown(event)"
+                    style="display: flex; align-items: center; gap: 0.75rem;">
+                    <div style="text-align: right;">
+                        <div id="user-display-name" style="font-weight: 700; font-size: 0.9rem;">Usuario</div>
+                        <div id="user-display-email" style="font-size: 0.7rem; color: var(--text-dim);">
+                            usuario@portal.com</div>
+                    </div>
+                    <div
+                        style="width: 2.5rem; height: 2.5rem; background: var(--primary); border-radius: 50%; display: flex; align-items: center; justify-content: center; color: white; font-weight: 800; font-size: 1.1rem; box-shadow: 0 4px 6px -1px rgba(79, 70, 229, 0.3);">
+                        U
+                    </div>
+
+                    <!-- Profile Dropdown Menu (Logout only) -->
+                    <div id="profile-dropdown" class="profile-dropdown">
+                        <div class="dropdown-item danger" onclick="logout(); event.stopPropagation();">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1">
+                                </path>
+                            </svg>
+                            Cerrar Sesión
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </header>
+
+        <!-- View: Login -->
+        <div id="view-login" class="auth-card">
+            <div class="glass-card login-container">
+                <div class="login-header">
+                    <img src="/assets/logo-SinFondo.png" alt="Logo" class="login-logo">
+                    <h1 style="font-size: 1.75rem; margin-bottom: 0.5rem; color: var(--primary);">Acceso Corporativo
+                    </h1>
+                    <p style="color: var(--text-dim); margin-bottom: 2rem; font-size: 0.9rem;">Ingresa tus credenciales
+                        para continuar</p>
+                </div>
+
+                <form id="login-form">
+                    <div class="input-group">
+                        <input type="email" id="login-email" class="input-field" placeholder="Correo electrónico"
+                            required title="Email">
+                    </div>
+                    <div class="input-group">
+                        <input type="password" id="login-password" class="input-field" placeholder="Contraseña" required
+                            title="Password">
+                    </div>
+                    <button type="submit" class="btn-primary" style="width: 100%; margin-top: 1rem;">ENTRAR AL
+                        PORTAL</button>
+                    <p style="margin-top: 1.5rem; font-size: 0.85rem; color: var(--text-dim);">¿No tienes cuenta? <a
+                            href="#" onclick="showView('register')"
+                            style="color: var(--primary); font-weight: 700;">Solicitar Acceso</a></p>
+                </form>
+            </div>
+        </div>
+
+        <!-- View: Register -->
+        <div id="view-register" class="hidden auth-card">
+            <div class="glass-card login-container">
+                <div class="login-header">
+                    <img src="/assets/logo-SinFondo.png" alt="Logo" class="login-logo">
+                    <h2 style="margin-bottom: 0.5rem; color: var(--primary);">Solicitud de Acceso</h2>
+                    <p style="color: var(--text-dim); margin-bottom: 2rem; font-size: 0.9rem;">Completa el formulario
+                        para registrarte.</p>
+                </div>
+
+                <form id="register-form">
+                    <input type="text" id="reg-name" class="input-field" placeholder="Nombre completo" required>
+                    <input type="email" id="reg-email" class="input-field" placeholder="Email corporativo" required>
+                    <input type="password" id="reg-password" class="input-field" placeholder="Contraseña sugerida"
+                        required>
+                    <button type="submit" class="btn-primary" style="width: 100%; margin-top: 1rem;">ENVIAR
+                        SOLICITUD</button>
+                    <p style="margin-top: 1.5rem; text-align: center;"><a href="#" onclick="showView('login')"
+                            style="color: var(--text-dim); font-size: 0.85rem;">Volver al Login</a></p>
+                </form>
+            </div>
+        </div>
+
+        <!-- View: Force Password Reset -->
+        <div id="view-force-reset" class="hidden auth-card">
+            <div class="glass-card login-container">
+                <div class="login-header">
+                    <img src="/assets/logo-SinFondo.png" alt="Logo" class="login-logo">
+                    <h2 style="color: var(--primary); margin-bottom: 1rem;">Cambio de Contraseña</h2>
+                    <p style="color: var(--text-dim); margin-bottom: 2rem;">Es obligatorio cambiar tu clave en el primer
+                        ingreso.</p>
+                </div>
+                <form id="reset-form">
+                    <!-- Hidden username for password managers -->
+                    <input type="text" name="username" id="reset-username" style="display:none;"
+                        autocomplete="username">
+
+                    <input type="password" id="reset-new-password" class="input-field" placeholder="Nueva Contraseña"
+                        required autocomplete="new-password">
+                    <input type="password" id="reset-confirm-password" class="input-field"
+                        placeholder="Confirmar Contraseña" required autocomplete="new-password">
+                    <button type="submit" class="btn-primary" style="width: 100%;">CAMBIAR Y CONTINUAR</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- View: Main Dashboard -->
+        <div id="view-user-dashboard" class="hidden" style="width: 100%;">
+            <div class="welcome-banner">
+                <h1 style="font-size: 2rem; margin-bottom: 0.5rem;">Bienvenido al Portal de la Gerencia de Cobros &
+                    Recaudo</h1>
+                <p style="opacity: 0.8;">Explora los reportes y visualizaciones disponibles para tu perfil.</p>
+            </div>
+
+            <div id="dashboard-list" class="report-grid">
+                <!-- Cards injected here -->
+            </div>
+        </div>
+
+        <!-- View: Admin Panel -->
+        <div id="view-admin" class="hidden" style="width: 100%;">
+            <div class="admin-layout">
+                <div class="section-panel">
+                    <h3 style="margin-bottom: 1.5rem;">Gestión de Usuarios</h3>
+                    <div style="overflow-x: auto;">
+                        <table class="user-table" id="users-table">
+                            <thead>
+                                <tr>
+                                    <th>Info Usuario</th>
+                                    <th>Rol</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <div class="section-panel">
+                    <h3>Configuración de Usuario</h3>
+                    <p style="font-size: 0.8rem; color: var(--text-dim); margin-bottom: 1rem;">Crea un nuevo usuario o
+                        edita uno existente.</p>
+                    <form id="admin-create-user-form">
+                        <input type="text" id="adm-new-name" class="input-field" placeholder="Nombre completo" required>
+                        <input type="email" id="adm-new-email" class="input-field" placeholder="Email" required>
+                        <input type="password" id="adm-new-password" class="input-field" placeholder="Contraseña">
+
+                        <label style="display:block; margin-bottom: 0.5rem; font-size: 0.75rem; font-weight: 700;">Rol
+                            Asignado</label>
+                        <select id="adm-new-role" class="input-field">
+                            <option value="1">Administrador</option>
+                            <option value="2">Usuario Normal</option>
+                        </select>
+
+                        <div style="margin: 1.5rem 0;">
+                            <label
+                                style="display:block; margin-bottom: 1rem; font-size: 0.75rem; font-weight: 700;">Permisos
+                                de Acceso</label>
+
+                            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+                                <label
+                                    style="display:flex; align-items:center; gap:0.5rem; cursor:pointer; font-size: 0.8rem;">
+                                    <input type="checkbox" id="perm-hist"> Reportes Históricos
+                                </label>
+                                <label
+                                    style="display:flex; align-items:center; gap:0.5rem; cursor:pointer; font-size: 0.8rem;">
+                                    <input type="checkbox" id="perm-conc"> Conceptos Generales
+                                </label>
+
+                                <label
+                                    style="display:flex; align-items:center; gap:0.5rem; cursor:pointer; font-size: 0.8rem;">
+                                    <input type="checkbox" id="perm-bdef-index"> BDEF: Info General
+                                </label>
+                                <label
+                                    style="display:flex; align-items:center; gap:0.5rem; cursor:pointer; font-size: 0.8rem;">
+                                    <input type="checkbox" id="perm-bdef-ind"> BDEF: Individual
+                                </label>
+                                <label
+                                    style="display:flex; align-items:center; gap:0.5rem; cursor:pointer; font-size: 0.8rem;">
+                                    <input type="checkbox" id="perm-bdef-bulk"> BDEF: Masivo
+                                </label>
+                                <label
+                                    style="display:flex; align-items:center; gap:0.5rem; cursor:pointer; font-size: 0.8rem;">
+                                    <input type="checkbox" id="perm-bdef-deuda"> BDEF: Deuda
+                                </label>
+                                <label
+                                    style="display:flex; align-items:center; gap:0.5rem; cursor:pointer; font-size: 0.8rem;">
+                                    <input type="checkbox" id="perm-bdef-recaudo"> BDEF: Recaudo
+                                </label>
+                                <label
+                                    style="display:flex; align-items:center; gap:0.5rem; cursor:pointer; font-size: 0.8rem;">
+                                    <input type="checkbox" id="perm-bdef-hist"> BDEF: Histórico
+                                </label>
+                                <label
+                                    style="display:flex; align-items:center; gap:0.5rem; cursor:pointer; font-size: 0.8rem;">
+                                    <input type="checkbox" id="perm-bdef-trans"> BDEF: Transformador
+                                </label>
+                                <label
+                                    style="display:flex; align-items:center; gap:0.5rem; cursor:pointer; font-size: 0.8rem;">
+                                    <input type="checkbox" id="perm-bdef-territorial"> BDEF: Territorial
+                                </label>
+                            </div>
+                        </div>
+
+                        <button type="submit" class="btn-primary" style="width: 100%;">EJECUTAR ACCIÓN</button>
+                    </form>
+
+                    <div style="margin-top: 2rem; border-top: 2px dashed var(--border); padding-top: 1.5rem;">
+                        <h4 style="font-size: 0.8rem; margin-bottom: 1rem;">Solicitudes Pendientes</h4>
+                        <table class="user-table" id="pending-table">
+                            <thead>
+                                <tr>
+                                    <th>Nombre</th>
+                                    <th>Email</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- View: Report Viewer -->
+        <div id="view-viewer" class="fullscreen-viewer hidden">
+            <div class="viewer-header"
+                style="height: 60px; background: var(--bg-card); border-bottom: 1px solid var(--border); padding: 0 1.5rem; display: flex; align-items: center; justify-content: space-between;">
+                <div style="display: flex; align-items: center; gap: 1.5rem;">
+                    <div style="display: flex; align-items: center; gap: 0.8rem;">
+                        <img src="/assets/logo-SinFondo.png" alt="Logo" style="height: 32px; width: auto;">
+                        <span id="viewer-title"
+                            style="font-weight: 800; font-size: 1.1rem; color: var(--text-main);">REPORTE</span>
+                    </div>
+
+                    <div style="height: 24px; width: 1px; background: var(--border); margin: 0 0.5rem;"></div>
+
+                    <div style="font-size: 0.85rem; color: var(--text-dim); font-weight: 600;">
+                        <span style="opacity: 0.7;">Datos al:</span>
+                        <span id="viewer-last-update"
+                            style="color: var(--primary); font-weight: 700;">Cargando...</span>
+                    </div>
+                </div>
+
+                <div style="display: flex; align-items: center; gap: 1.2rem;">
+                    <!-- Theme Toggle with Text (Viewer Header) -->
+                    <div onclick="toggleGlobalTheme()"
+                        style="display: flex; align-items: center; gap: 0.6rem; cursor: pointer; padding: 6px 15px; border-radius: 20px; background: var(--bg-app); border: 1px solid var(--border); transition: all 0.2s;"
+                        title="Cambiar Apariencia">
+                        <svg id="theme-icon-viewer" style="width: 1.1rem; height: 1.1rem; color: var(--primary);"
+                            fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z">
+                            </path>
+                        </svg>
+                        <span id="theme-text-viewer"
+                            style="font-size: 0.75rem; font-weight: 800; text-transform: uppercase;">Modo Oscuro</span>
+                    </div>
+
+                    <div style="height: 24px; width: 1px; background: var(--border);"></div>
+
+                    <button onclick="closeViewer()"
+                        style="background: rgba(239, 68, 68, 0.1); color: #ef4444; border: 1px solid rgba(239, 68, 68, 0.2); padding: 0.5rem 1.5rem; border-radius: 8px; cursor: pointer; font-weight: 700; font-size: 0.75rem; transition: all 0.2s;">SALIR</button>
+                </div>
+            </div>
+            <iframe id="dashboard-iframe" src="" frameborder="0"></iframe>
+        </div>
+
+        <!-- App Footer -->
+        <footer id="app-footer"
+            style="position: sticky; bottom: 0; background: var(--bg-app); z-index: 50; padding: 1.5rem 0; border-top: 1px solid var(--border); margin-top: auto; display: flex; justify-content: space-between; align-items: center; color: var(--text-dim); font-size: 0.75rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em;">
+            <div>© 2026 Gerencia de Cobros & Recaudo - Realizado por Edwin Rueda - Air-e Intervenida</div>
+        </footer>
+    </main>
+
+    <!-- Global Portal Loader -->
+    <div id="portalLoader" class="hidden"
+        style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.7); backdrop-filter: blur(10px); z-index: 100000; display: flex; flex-direction: column; align-items: center; justify-content: center; color: white;">
+        <div style="text-align: center;">
+            <div class="premium-spinner">
+                <div class="inner-spin"></div>
+                <img src="/assets/logo-SinFondo.png" alt="Logo Loader" class="loader-logo">
+            </div>
+            <h2 style="font-weight: 800; letter-spacing: -1px; margin-bottom: 0.5rem;">CARGANDO SISTEMA</h2>
+            <p style="opacity: 0.7; font-size: 0.9rem;">Sincronizando con el servidor analítico...</p>
+        </div>
+    </div>
+
+    <style>
+        #portalLoader.hidden {
+            display: none !important;
+        }
+
+        .premium-spinner {
+            width: 100px;
+            height: 100px;
+            border: 4px solid rgba(255, 255, 255, 0.05);
+            border-top: 4px solid #3b82f6;
+            border-radius: 50%;
+            margin: 0 auto 2rem;
+            position: relative;
+            animation: spin 1.2s cubic-bezier(0.5, 0.1, 0.4, 0.9) infinite;
+        }
+
+        .loader-logo {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            height: 40px;
+            width: auto;
+            animation: pulse-logo 2s ease-in-out infinite;
+        }
+
+        @keyframes pulse-logo {
+
+            0%,
+            100% {
+                transform: translate(-50%, -50%) scale(0.95);
+                opacity: 0.7;
+            }
+
+            50% {
+                transform: translate(-50%, -50%) scale(1.05);
+                opacity: 1;
+            }
+        }
+
+        .inner-spin {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            right: 10px;
+            bottom: 10px;
+            border: 3px solid transparent;
+            border-top: 3px solid #60a5fa;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite reverse;
+            opacity: 0.6;
+        }
+
+        @keyframes spin {
+            to {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+
+    <script src="/js/app.js"></script>
+</body>
+
+</html>

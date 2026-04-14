@@ -1,0 +1,235 @@
+{% extends 'bdef/base_bdef.html' %}
+
+{% block title %}Consulta de Recaudo - BDEF_APP{% endblock %}
+
+{% block page_title %}Consulta de Recaudo{% endblock %}
+
+{% block page_subtitle %}
+{% if last_update %}
+Último Recaudo: {{ last_update|date:"d/m/Y h:i A"|default:last_update }}
+{% endif %}
+{% endblock %}
+
+{% block content %}
+<div style="display: flex; flex-direction: column; gap: 2rem;">
+
+    <!-- Formulario de Carga -->
+    <form method="POST" action="{% url 'bdef_recaudo' %}?token={{ token }}" enctype="multipart/form-data">
+        {% csrf_token %}
+        <input type="hidden" name="token" value="{{ token }}">
+
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; margin-bottom: 2rem;">
+            <!-- Cuenta Individual -->
+            <div class="card" style="border-left: 4px solid var(--primary);">
+                <label style="display: block; margin-bottom: 0.8rem; font-size: 0.8rem; font-weight: 700; color: var(--primary); text-transform: uppercase; letter-spacing: 0.5px;">
+                    <i class="fas fa-search"></i> Consulta Individual
+                </label>
+                <div style="position: relative;">
+                    <i class="fas fa-receipt" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--primary);"></i>
+                    <input type="text" name="account" placeholder="Ej: 1234567" style="width: 100%; background: var(--bg-main); border: 1px solid var(--glass-border); padding: 12px 12px 12px 38px; border-radius: 10px; color: var(--text-main); font-weight: 600; font-size: 0.95rem;">
+                </div>
+                <p style="margin: 0.5rem 0 0; font-size: 0.75rem; color: var(--text-muted);">Ingrese un número de cuenta para consultar su recaudo</p>
+            </div>
+
+            <!-- Carga CSV -->
+            <div class="card" style="border-left: 4px solid var(--secondary);">
+                <label style="display: block; margin-bottom: 0.8rem; font-size: 0.8rem; font-weight: 700; color: var(--secondary); text-transform: uppercase; letter-spacing: 0.5px;">
+                    <i class="fas fa-file-upload"></i> Consulta Masiva (CSV)
+                </label>
+                <label style="display: flex; align-items: center; justify-content: center; gap: 0.8rem; padding: 14px; border: 2px dashed var(--glass-border); border-radius: 10px; cursor: pointer; transition: all 0.3s;" onmouseover="this.style.borderColor='var(--secondary)'" onmouseout="this.style.borderColor='var(--glass-border)'">
+                    <i class="fas fa-cloud-upload-alt" style="font-size: 1.2rem; color: var(--secondary);"></i>
+                    <span id="fileLabel" style="font-size: 0.9rem; font-weight: 600; color: var(--text-main);">Seleccionar archivo CSV</span>
+                    <input type="file" name="csv_file" accept=".csv" style="display: none;" onchange="document.getElementById('fileLabel').textContent = this.files[0] ? this.files[0].name : 'Seleccionar archivo CSV'">
+                </label>
+                <p style="margin: 0.5rem 0 0; font-size: 0.75rem; color: var(--text-muted);">Cargue un CSV con las cuentas en la primera columna</p>
+            </div>
+        </div>
+
+        <div style="display: flex; justify-content: flex-end;">
+            <button type="submit" class="btn-primary" style="padding: 12px 2rem; border-radius: 12px; font-size: 0.95rem; font-weight: 700; display: flex; align-items: center; gap: 0.8rem;">
+                <i class="fas fa-search"></i> Consultar Recaudo
+            </button>
+        </div>
+    </form>
+
+    <!-- Error -->
+    {% if error_message %}
+    <div class="card" style="border-left: 4px solid #ef4444; background: rgba(239, 68, 68, 0.05);">
+        <p style="color: #ef4444; font-weight: 600; margin: 0;"><i class="fas fa-exclamation-triangle"></i> {{ error_message }}</p>
+    </div>
+    {% endif %}
+
+    <!-- Resultado Individual -->
+    {% if recaudo_data %}
+    <div class="card" style="border-left: 4px solid #10b981;">
+        <h3 style="margin: 0 0 1rem; font-weight: 700; font-size: 1rem;">
+            <i class="fas fa-coins" style="color: #10b981;"></i> Recaudo de la cuenta: <span style="color: var(--primary);">{{ account }}</span>
+        </h3>
+        <div style="overflow-x: auto;">
+            <table id="recaudoTable" class="display" style="width: 100%; font-size: 0.85rem;">
+                <thead>
+                    <tr>
+                        {% for col in recaudo_columns %}
+                        <th style="background: var(--bg-main); color: var(--text-main); padding: 10px 12px; font-size: 0.75rem; text-transform: uppercase; border-bottom: 2px solid var(--primary);">{{ col }}</th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for row in recaudo_data %}
+                    <tr>
+                        {% for col in recaudo_columns %}
+                        <td style="padding: 8px 12px; border-bottom: 1px solid var(--glass-border); color: var(--text-main);">{% for k, v in row.items %}{% if k == col %}{{ v }}{% endif %}{% endfor %}</td>
+                        {% endfor %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% endif %}
+
+    {% if no_recaudo %}
+    <div class="card" style="border-left: 4px solid #f59e0b; background: rgba(245, 158, 11, 0.05);">
+        <p style="color: #f59e0b; font-weight: 600; margin: 0;">
+            <i class="fas fa-info-circle"></i> La cuenta <strong>{{ account }}</strong> no registra recaudo en el sistema.
+        </p>
+    </div>
+    {% endif %}
+
+    <!-- Fase 2: Selección de Columnas y Descarga (Masivo) -->
+    {% if accounts_full %}
+    <div class="card" style="border-left: 4px solid #10b981; background: rgba(16, 185, 129, 0.03);">
+        <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 0.5rem;">
+            <i class="fas fa-check-circle" style="color: #10b981; font-size: 1.3rem;"></i>
+            <div>
+                <span style="font-weight: 700; font-size: 1rem; color: var(--text-main);">{{ total_accounts }} cuenta{{ total_accounts|pluralize:"s" }} cargada{{ total_accounts|pluralize:"s" }}</span>
+                <span style="font-size: 0.8rem; color: var(--text-muted); margin-left: 0.5rem;">
+                    {% if accounts|length < total_accounts %}(mostrando primeras {{ accounts|length }}){% endif %}
+                </span>
+            </div>
+        </div>
+        <div style="display: flex; flex-wrap: wrap; gap: 0.4rem;">
+            {% for acc in accounts %}
+            <span style="background: var(--bg-main); padding: 4px 10px; border-radius: 6px; font-size: 0.8rem; font-weight: 600; border: 1px solid var(--glass-border);">{{ acc }}</span>
+            {% endfor %}
+            {% if total_accounts > 10 %}
+            <span style="background: var(--bg-main); padding: 4px 10px; border-radius: 6px; font-size: 0.8rem; font-weight: 600; color: var(--text-muted);">+{{ total_accounts|add:"-10" }} más</span>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Selector de Columnas -->
+    <form method="POST" action="{% url 'bdef_recaudo' %}?token={{ token }}" id="recaudoDownloadForm">
+        {% csrf_token %}
+        <input type="hidden" name="token" value="{{ token }}">
+        <input type="hidden" name="download" value="1">
+        <input type="hidden" name="account_list" value="{{ accounts_full|join:',' }}">
+
+        <div class="card" style="border-left: 4px solid #6366f1;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1.2rem;">
+                <div>
+                    <h3 style="margin: 0; font-weight: 700; font-size: 1rem;">
+                        <i class="fas fa-columns" style="color: #6366f1;"></i> Campos a Descargar
+                    </h3>
+                    <p style="margin: 0.3rem 0 0; font-size: 0.8rem; color: var(--text-muted);">
+                        Seleccione los campos. Si no selecciona ninguno, se descargarán todos.
+                    </p>
+                </div>
+                <div style="display: flex; gap: 0.5rem; align-items: center;">
+                    <div style="position: relative; margin-right: 0.5rem;">
+                        <i class="fas fa-search" style="position: absolute; left: 10px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 0.8rem;"></i>
+                        <input type="text" id="columnSearch" onkeyup="filterColumns()" placeholder="Buscar campo..." 
+                            style="padding: 6px 10px 6px 30px; border-radius: 8px; border: 1px solid var(--glass-border); background: var(--bg-main); color: var(--text-main); font-size: 0.8rem; width: 180px;">
+                    </div>
+                    <button type="button" onclick="toggleAll(true)" style="padding: 6px 14px; border-radius: 8px; border: 1px solid var(--glass-border); background: var(--bg-main); color: var(--text-main); cursor: pointer; font-size: 0.8rem; font-weight: 600;">
+                        <i class="fas fa-check-double"></i> Todos
+                    </button>
+                    <button type="button" onclick="toggleAll(false)" style="padding: 6px 14px; border-radius: 8px; border: 1px solid var(--glass-border); background: var(--bg-main); color: var(--text-main); cursor: pointer; font-size: 0.8rem; font-weight: 600;">
+                        <i class="fas fa-times"></i> Ninguno
+                    </button>
+                </div>
+            </div>
+
+            <div id="columnsGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 0.6rem; max-height: 400px; overflow-y: auto; padding: 0.5rem; border: 1px solid var(--glass-border); border-radius: 10px; background: var(--bg-main);">
+                {% for col in available_columns %}
+                <label class="column-wrapper" style="display: flex; align-items: center; gap: 0.6rem; padding: 8px 12px; border-radius: 8px; cursor: pointer; font-size: 0.85rem; font-weight: 500; color: var(--text-main); transition: background 0.2s;" onmouseover="this.style.background='var(--glass-bg)'" onmouseout="this.style.background='transparent'">
+                    <input type="checkbox" name="columns" value="{{ col }}" class="col-checkbox" style="accent-color: #6366f1; width: 16px; height: 16px; cursor: pointer;">
+                    <span>{{ col }}</span>
+                </label>
+                {% endfor %}
+            </div>
+
+            <div style="margin-top: 1rem; font-size: 0.8rem; color: var(--text-muted);">
+                <i class="fas fa-info-circle"></i>
+                <span id="selectedCount">0</span> de {{ available_columns|length }} campos seleccionados
+            </div>
+        </div>
+
+        <div style="margin-top: 1.5rem; display: flex; justify-content: flex-end;">
+            <button type="submit" class="btn-primary" style="padding: 14px 2.5rem; border-radius: 12px; font-size: 1rem; font-weight: 700; display: flex; align-items: center; gap: 0.8rem;">
+                <i class="fas fa-download"></i> Descargar CSV
+            </button>
+        </div>
+    </form>
+    {% endif %}
+
+</div>
+
+<script>
+    function toggleAll(state) {
+        document.querySelectorAll('.col-checkbox').forEach(cb => { 
+            if (cb.closest('.column-wrapper').style.display !== 'none') {
+                cb.checked = state; 
+            }
+        });
+        updateCount();
+    }
+    function filterColumns() {
+        const query = document.getElementById('columnSearch').value.toLowerCase();
+        document.querySelectorAll('.column-wrapper').forEach(el => {
+            const text = el.querySelector('span').textContent.toLowerCase();
+            el.style.display = text.includes(query) ? 'flex' : 'none';
+        });
+    }
+    function updateCount() {
+        const el = document.getElementById('selectedCount');
+        if (el) { el.textContent = document.querySelectorAll('.col-checkbox:checked').length; }
+    }
+    document.querySelectorAll('.col-checkbox').forEach(cb => { cb.addEventListener('change', updateCount); });
+
+    $(document).ready(function() {
+        {% if error_message %}
+        Swal.fire({
+            icon: 'info',
+            title: 'Información',
+            text: '{{ error_message|escapejs }}',
+            confirmButtonColor: '#6366f1'
+        });
+        {% endif %}
+
+        if ($('#recaudoTable').length) {
+            $('#recaudoTable').DataTable({
+                dom: 'Bfrtip',
+                buttons: ['copy', 'excel', 'print'],
+                language: { url: '//cdn.datatables.net/plug-ins/1.13.6/i18n/es-ES.json' },
+                scrollX: true,
+                pageLength: 25
+            });
+        }
+
+        // Validación de columnas para descarga
+        $('#recaudoDownloadForm').on('submit', function(e) {
+            if ($('.col-checkbox:checked').length === 0) {
+                e.preventDefault();
+                Swal.fire({
+                    icon: 'warning',
+                    title: 'Atención',
+                    text: 'Debe seleccionar al menos una columna para descargar.',
+                    confirmButtonColor: '#6366f1'
+                });
+                return false;
+            }
+        });
+    });
+</script>
+{% endblock %}

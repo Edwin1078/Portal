@@ -1,0 +1,176 @@
+{% extends 'bdef/base_bdef.html' %}
+
+{% block title %}Consulta Masiva - BDEF_APP{% endblock %}
+
+{% block page_title %}Consulta Masiva{% endblock %}
+
+{% block page_subtitle %}{% endblock %}
+
+{% block content %}
+<div style="display: flex; flex-direction: column; gap: 2rem;">
+    
+    <!-- Sección de Carga -->
+    <div class="card" style="border-left: 4px solid var(--primary);">
+        <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem;">
+            <div style="background: var(--primary-light); color: var(--primary); width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center;">
+                <i class="fas fa-upload" style="font-size: 1.2rem;"></i>
+            </div>
+            <div>
+                <h3 style="margin: 0; font-size: 1.1rem; font-weight: 700;">Subir archivo de cuentas</h3>
+                <p style="margin: 0; font-size: 0.85rem; color: var(--text-muted);">Formatos aceptados: .csv (una cuenta por línea o separados por coma)</p>
+            </div>
+        </div>
+        
+        <form method="POST" enctype="multipart/form-data" action="{% url 'bdef_bulk' %}?token={{ token }}" id="uploadForm">
+            {% csrf_token %}
+            <input type="hidden" name="token" value="{{ token }}">
+            <div style="display: flex; gap: 1rem; align-items: center; flex-wrap: wrap;">
+                <input type="file" name="csv_file" style="background: var(--bg-main); padding: 10px; border-radius: 8px; border: 1px dashed var(--glass-border); flex-grow: 1;">
+                <button type="submit" class="btn-primary" style="height: 45px; padding: 0 2rem;">
+                    <i class="fas fa-search"></i> Procesar
+                </button>
+            </div>
+        </form>
+    </div>
+
+    {% if accounts %}
+    <!-- Resultados y Configuración de Descarga -->
+    <div class="card" style="border-left: 4px solid var(--accent);">
+        <div style="margin-bottom: 2rem;">
+            <h3 style="margin: 0 0 1rem 0; font-size: 1.1rem; font-weight: 700;">
+                <i class="fas fa-check-circle" style="color: var(--accent);"></i> Cuentas Detectadas ({{ total_accounts|default:0 }})
+            </h3>
+            <div style="display: flex; flex-wrap: wrap; gap: 0.5rem;">
+                {% for acc in accounts %}
+                <span style="background: var(--bg-main); border: 1px solid var(--glass-border); padding: 4px 10px; border-radius: 6px; font-size: 0.8rem; font-family: monospace; font-weight: 600;">
+                    {{ acc }}
+                </span>
+                {% endfor %}
+                {% if accounts_full|length > 10 %}
+                <span style="color: var(--text-muted); font-size: 0.8rem; align-self: center;">... y otras {{ accounts_full|length|add:"-10" }} cuentas</span>
+                {% endif %}
+            </div>
+        </div>
+
+        <hr style="border: 0; border-top: 1px solid var(--glass-border); margin: 2rem 0;">
+
+        <form method="POST" action="{% url 'bdef_bulk' %}?token={{ token }}" id="bulkDownloadForm">
+            {% csrf_token %}
+            <input type="hidden" name="token" value="{{ token }}">
+            <input type="hidden" name="account_list" value="{{ accounts_full|join:',' }}">
+            <input type="hidden" name="download" value="true">
+            
+            <div style="margin-bottom: 1.5rem; display: flex; align-items: center; justify-content: space-between; gap: 1rem; flex-wrap: wrap;">
+                <div>
+                    <h3 style="margin: 0 0 0.5rem 0; font-size: 1.1rem; font-weight: 700;">Seleccionar Columnas</h3>
+                    <p style="margin: 0; font-size: 0.85rem; color: var(--text-muted);">Elija las columnas que desea incluir en la descarga.</p>
+                </div>
+                <!-- Buscador de Columnas -->
+                <div style="position: relative; flex-grow: 1; max-width: 350px;">
+                    <i class="fas fa-search" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 0.9rem;"></i>
+                    <input type="text" id="columnSearch" placeholder="Buscar columna..." onkeyup="filterColumns()" style="width: 100%; background: var(--bg-main); border: 1px solid var(--glass-border); padding: 10px 10px 10px 35px; border-radius: 10px; color: var(--text-main); font-size: 0.9rem; transition: all 0.3s ease;">
+                </div>
+            </div>
+
+            <!-- Grid de Checkboxes Optimizada -->
+            <div id="columnsGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 0.8rem; margin-bottom: 2rem; max-height: 400px; overflow-y: auto; padding: 1rem; background: var(--bg-main); border-radius: 12px; border: 1px solid var(--glass-border);">
+                {% for col in available_columns %}
+                <label style="display: flex; align-items: center; gap: 0.8rem; font-size: 0.85rem; padding: 8px; border-radius: 6px; cursor: pointer; transition: all 0.2s; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;" class="check-item column-wrapper">
+                    <input type="checkbox" name="columns" value="{{ col }}" style="width: 18px; height: 18px; accent-color: var(--accent);">
+                    <span title="{{ col }}">{{ col }}</span>
+                </label>
+                {% endfor %}
+            </div>
+
+            <div style="display: flex; gap: 1rem; justify-content: flex-end;">
+                <button type="button" onclick="selectAll(true)" class="btn-primary" style="background: none; border: 1px solid var(--glass-border); color: var(--text-main);">Seleccionar Todo</button>
+                <button type="button" onclick="selectAll(false)" class="btn-primary" style="background: none; border: 1px solid var(--glass-border); color: var(--text-main);">Limpiar</button>
+                <button type="submit" class="btn-primary" style="background: var(--accent);">
+                    <i class="fas fa-file-download"></i> Descargar CSV Resultado
+                </button>
+            </div>
+        </form>
+    </div>
+    {% endif %}
+
+</div>
+
+<style>
+    .check-item:hover {
+        background: var(--glass-bg);
+        transform: translateX(3px);
+    }
+    .check-item span {
+        text-transform: capitalize;
+        color: var(--text-main);
+        font-weight: 500;
+    }
+</style>
+
+<script>
+    function selectAll(val) {
+        document.querySelectorAll('input[type="checkbox"]').forEach(c => {
+            if (c.parentElement.style.display !== 'none') {
+                c.checked = val;
+            }
+        });
+    }
+
+    function filterColumns() {
+        const query = document.getElementById('columnSearch').value.toLowerCase();
+        const items = document.querySelectorAll('.column-wrapper');
+        
+        items.forEach(item => {
+            const text = item.querySelector('span').innerText.toLowerCase();
+            if (text.includes(query)) {
+                item.style.display = 'flex';
+            } else {
+                item.style.display = 'none';
+            }
+        });
+    }
+    // Validación antes de descargar
+    const downloadForm = document.getElementById('bulkDownloadForm');
+    if (downloadForm) {
+        downloadForm.addEventListener('submit', function(e) {
+            const checked = document.querySelectorAll('input[name="columns"]:checked').length;
+            if (checked === 0) {
+                e.preventDefault();
+                // Detener el loader que se activa por el listener global en base
+                const loader = document.getElementById('globalLoader');
+                if (loader) loader.style.display = 'none';
+                
+                Swal.fire({
+                    title: 'Selección de Columnas',
+                    text: 'Debe seleccionar al menos una columna para generar el archivo de descarga.',
+                    icon: 'warning',
+                    confirmButtonColor: '#3b82f6',
+                    background: document.body.classList.contains('light-mode') ? '#fff' : '#1e293b',
+                    color: document.body.classList.contains('light-mode') ? '#1e293b' : '#fff'
+                });
+            }
+        });
+    }
+    // Validación antes de cargar archivo
+    const uploadForm = document.getElementById('uploadForm');
+    if (uploadForm) {
+        uploadForm.addEventListener('submit', function(e) {
+            const fileInput = document.querySelector('input[name="csv_file"]');
+            if (!fileInput.files.length) {
+                e.preventDefault();
+                const loader = document.getElementById('globalLoader');
+                if (loader) loader.style.display = 'none';
+                
+                Swal.fire({
+                    title: 'Archivo Requerido',
+                    text: 'Debe seleccionar un archivo .csv antes de hacer clic en Procesar.',
+                    icon: 'info',
+                    confirmButtonColor: '#3b82f6',
+                    background: document.body.classList.contains('light-mode') ? '#fff' : '#1e293b',
+                    color: document.body.classList.contains('light-mode') ? '#1e293b' : '#fff'
+                });
+            }
+        });
+    }
+</script>
+{% endblock %}

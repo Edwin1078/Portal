@@ -1,0 +1,167 @@
+{% extends 'base.html' %}
+
+{% block title %}Reporte Histórico - BDEF_APP{% endblock %}
+
+{% block page_title %}Reporte Histórico{% endblock %}
+
+{% block page_subtitle %}{% endblock %}
+
+{% block top_actions %}{% endblock %}
+
+{% block content %}
+<div style="display: flex; flex-direction: column; gap: 2rem;">
+    
+    <!-- Sección de Configuración de Consulta -->
+    <div class="card" style="border-left: 4px solid var(--primary);">
+        <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 2rem;">
+            <div style="background: var(--primary-light); color: var(--primary); width: 40px; height: 40px; border-radius: 10px; display: flex; align-items: center; justify-content: center;">
+                <i class="fas fa-history" style="font-size: 1.2rem;"></i>
+            </div>
+            <div>
+                <h3 style="margin: 0; font-size: 1.1rem; font-weight: 700;">Configurar Extracción Histórica</h3>
+                <p style="margin: 0; font-size: 0.85rem; color: var(--text-muted);">Seleccione el rango de periodos y suba el listado de cuentas.</p>
+            </div>
+        </div>
+        
+        <form method="POST" enctype="multipart/form-data" action="{% url 'history' %}" id="historyForm">
+            {% csrf_token %}
+            
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem; margin-bottom: 2rem;">
+                <!-- Selector Desde -->
+                <div class="form-group">
+                    <label style="display: block; margin-bottom: 0.5rem; font-size: 0.85rem; font-weight: 600; color: var(--text-main);">
+                        <i class="fas fa-calendar-alt" style="color: var(--primary);"></i> Periodo Inicial (Desde)
+                    </label>
+                    <select name="start_period" class="input-control" required style="width: 100%; height: 45px; background: var(--bg-main); border: 1px solid var(--glass-border); border-radius: 8px; color: var(--text-main); padding: 0 1rem;">
+                        <option value="">Seleccione...</option>
+                        {% for p in available_periods %}
+                        <option value="{{ p }}" {% if start_period == p %}selected{% endif %}>{{ p }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Selector Hasta -->
+                <div class="form-group">
+                    <label style="display: block; margin-bottom: 0.5rem; font-size: 0.85rem; font-weight: 600; color: var(--text-main);">
+                        <i class="fas fa-calendar-check" style="color: var(--primary);"></i> Periodo Final (Hasta)
+                    </label>
+                    <select name="end_period" class="input-control" required style="width: 100%; height: 45px; background: var(--bg-main); border: 1px solid var(--glass-border); border-radius: 8px; color: var(--text-main); padding: 0 1rem;">
+                        <option value="">Seleccione...</option>
+                        {% for p in available_periods %}
+                        <option value="{{ p }}" {% if end_period == p %}selected{% endif %}>{{ p }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <!-- Carga de Archivo -->
+                <div class="form-group">
+                    <label style="display: block; margin-bottom: 0.5rem; font-size: 0.85rem; font-weight: 600; color: var(--text-main);">
+                        <i class="fas fa-file-upload" style="color: var(--primary);"></i> Carga de Cuentas (.csv)
+                    </label>
+                    <input type="file" name="csv_file" class="input-control" style="width: 100%; height: 45px; background: var(--bg-main); border: 1px dashed var(--glass-border); padding: 8px; border-radius: 8px;">
+                </div>
+            </div>
+
+            <div style="display: flex; justify-content: flex-end;">
+                <button type="submit" class="btn-primary" style="padding: 0 2.5rem; height: 48px; border-radius: 12px; font-weight: 600; box-shadow: 0 4px 15px rgba(59, 130, 246, 0.3);">
+                    <i class="fas fa-rocket"></i> Procesar Historia
+                </button>
+            </div>
+        </form>
+    </div>
+
+    {% if accounts %}
+    <!-- Resultados y Configuración de Columnas -->
+    <div class="card" style="border-left: 4px solid var(--accent); border-top: 1px solid var(--glass-border);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
+            <div>
+                <h3 style="margin: 0; font-size: 1.1rem; font-weight: 700;">
+                    <i class="fas fa-database" style="color: var(--accent);"></i> Configuración de Descarga
+                </h3>
+                <p style="margin: 0.3rem 0 0 0; font-size: 0.85rem; color: var(--text-muted);">
+                    Periodos: <strong>{{ start_period }} - {{ end_period }}</strong> | Cuentas: <strong>{{ accounts_full|length }}</strong>
+                </p>
+            </div>
+            
+            <div style="position: relative; width: 300px;">
+                <i class="fas fa-search" style="position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted); font-size: 0.85rem;"></i>
+                <input type="text" id="colSearch" placeholder="Buscar columna..." onkeyup="filterCols()" 
+                       style="width: 100%; background: var(--bg-main); border: 1px solid var(--glass-border); padding: 10px 10px 10px 35px; border-radius: 10px; color: var(--text-main); font-size: 0.85rem;">
+            </div>
+        </div>
+
+        <form method="POST" action="{% url 'history' %}" id="historyDownloadForm">
+            {% csrf_token %}
+            <input type="hidden" name="account_list" value="{{ accounts_full|join:',' }}">
+            <input type="hidden" name="start_period" value="{{ start_period }}">
+            <input type="hidden" name="end_period" value="{{ end_period }}">
+            <input type="hidden" name="download" value="true">
+
+            <!-- Grid de Checkboxes -->
+            <div id="colsGrid" style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 0.8rem; margin-bottom: 2rem; max-height: 400px; overflow-y: auto; padding: 1rem; background: var(--bg-main); border-radius: 12px; border: 1px solid var(--glass-border);">
+                {% for col in available_columns %}
+                <label class="col-item-wrapper" style="display: flex; align-items: center; gap: 0.8rem; font-size: 0.85rem; padding: 8px; border-radius: 6px; cursor: pointer; transition: all 0.2s; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
+                    <input type="checkbox" name="columns" value="{{ col }}" style="width: 18px; height: 18px; accent-color: var(--accent);">
+                    <span title="{{ col }}" style="color: var(--text-main); font-weight: 500;">{{ col }}</span>
+                </label>
+                {% endfor %}
+            </div>
+
+            <div style="display: flex; gap: 1rem; justify-content: flex-end; align-items: center;">
+                <button type="button" onclick="massSelect(true)" class="btn-ghost" style="font-size: 0.85rem;">Seleccionar Todo</button>
+                <button type="button" onclick="massSelect(false)" class="btn-ghost" style="font-size: 0.85rem; margin-right: auto;">Limpiar</button>
+                
+                <button type="submit" class="btn-primary" style="background: var(--accent); padding: 0 2.5rem; height: 48px; border-radius: 12px; font-weight: 700; box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);">
+                    <i class="fas fa-download"></i> Generar Histórico (.csv)
+                </button>
+            </div>
+        </form>
+    </div>
+    {% endif %}
+
+</div>
+
+<style>
+    .col-item-wrapper:hover {
+        background: var(--glass-bg);
+        transform: translateX(3px);
+    }
+    .btn-ghost {
+        background: none;
+        border: 1px solid var(--glass-border);
+        color: var(--text-main);
+        padding: 8px 15px;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    .btn-ghost:hover {
+        background: var(--glass-bg);
+        border-color: var(--primary);
+    }
+</style>
+
+<script>
+    function massSelect(val) {
+        document.querySelectorAll('input[name="columns"]').forEach(c => {
+            if (c.parentElement.style.display !== 'none') {
+                c.checked = val;
+            }
+        });
+    }
+
+    function filterCols() {
+        const query = document.getElementById('colSearch').value.toLowerCase();
+        const items = document.querySelectorAll('.col-item-wrapper');
+        
+        items.forEach(item => {
+            const text = item.querySelector('span').innerText.toLowerCase();
+            if (text.includes(query)) {
+                item.style.display = 'flex';
+            } else {
+                item.style.display = 'none';
+            }
+        });
+    }
+</script>
+{% endblock %}

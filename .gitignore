@@ -1,0 +1,6 @@
+Historico/dashboard_standalone.html
+*.zip
+*.tar.gz
+__pycache__/
+*.pyc
+.env
